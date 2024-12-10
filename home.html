@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Workout Logger</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 20px;
+        }
+
+        h1 {
+            font-size: 24px;
+            margin: 0 0 20px 0;
+        }
+
+        .search-container {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #007AFF;
+        }
+
+        .set-inputs {
+            display: grid;
+            grid-template-columns: 1fr 1fr auto;
+            gap: 10px;
+            align-items: center;
+        }
+
+        button {
+            background: #007AFF;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #0056b3;
+        }
+
+        .sets-list {
+            margin-top: 20px;
+        }
+
+        .set-item {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .set-item:last-child {
+            border-bottom: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Add Exercise Set</h1>
+        
+        <div class="search-container">
+            <input 
+                type="text" 
+                id="exercise-search" 
+                placeholder="Search exercises..."
+                autocomplete="off"
+            >
+            <select id="exercise-select" disabled>
+                <option value="">Select an exercise</option>
+            </select>
+        </div>
+
+        <div class="set-inputs">
+            <input type="number" id="weight" placeholder="Weight (lbs)" min="0" step="0.5">
+            <input type="number" id="reps" placeholder="Reps" min="1">
+            <button onclick="addSet()">Add Set</button>
+        </div>
+
+        <div class="sets-list" id="sets-list"></div>
+    </div>
+
+    <script>
+        let debounceTimeout;
+        
+        $('#exercise-search').on('input', function() {
+            clearTimeout(debounceTimeout);
+            debounceTimeout = setTimeout(function() {
+                const query = $('#exercise-search').val();
+                if (query.length >= 2) {
+                    searchExercises(query);
+                }
+            }, 300);
+        });
+
+        function searchExercises(query) {
+            fetch(`/search_exercises?q=${encodeURIComponent(query)}`)
+                .then(response => response.json())
+                .then(exercises => {
+                    const select = $('#exercise-select');
+                    select.empty();
+                    select.append('<option value="">Select an exercise</option>');
+                    
+                    exercises.forEach(exercise => {
+                        select.append(`<option value="${exercise.id}">${exercise.name} (${exercise.equipment})</option>`);
+                    });
+                    
+                    select.prop('disabled', false);
+                });
+        }
+
+        function addSet() {
+            const exerciseId = $('#exercise-select').val();
+            const weight = $('#weight').val();
+            const reps = $('#reps').val();
+
+            if (!exerciseId || !weight || !reps) {
+                alert('Please fill in all fields');
+                return;
+            }
+
+            fetch('/add_set', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    exercise_id: exerciseId,
+                    weight: parseFloat(weight),
+                    reps: parseInt(reps)
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    const exercise = $('#exercise-select option:selected').text();
+                    const setHtml = `
+                        <div class="set-item">
+                            <strong>${exercise}</strong>
+                            <span>${weight} lbs × ${reps}</span>
+                        </div>
+                    `;
+                    $('#sets-list').prepend(setHtml);
+                    $('#weight').val('');
+                    $('#reps').val('');
+                }
+            });
+        }
+    </script>
+</body>
+</html>
