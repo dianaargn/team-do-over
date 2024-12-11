@@ -312,7 +312,7 @@ def start_workout_page():
     # Similar to dashboard but focused on starting a new workout
     # Show folders and templates for quick selection
     folders = Folder.query.filter_by(user_id=current_user.id).all()
-    return render_template('start_workout.html', folders=folders)
+    return render_template('dashboard.html', folders=folders)
 
 #stats is very hard to program
 @app.route('/stats')
