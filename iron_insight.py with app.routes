@@ -761,7 +761,7 @@ def init_db():
                 ('Dumbbell Wrist Extension', 'Forearms', 'Dumbbell')
             ]
     for name, category, equipment in exercises_data:
-        exercise=Exercise(name=name, catregoty=category, quipment=equipment)
+        exercise=Exercise(name=name, category=category, equipment=equipment)
         db.session.add(exercise)
     db.session.commit()
 
