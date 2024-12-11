@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Base</title>
+    <link href="{{ url_for('static', filename='styles/home.css')}}" rel="stylesheet" />
+</head>
+<body>
+    <h1>Iron Insight</h1>
+    <form action="/history">
+        <button type="menu">Past Workouts</button>
+    </form>
+    
+    <form action="/search">
+        <button type="menu">Search</button>
+    </form>
+
+    <form action="/new_workout">
+        <button type="menu">Do a Workout</button>
+    </form>
+    
+    <form action="stats">
+        <button type="menu">Stats</button>
+    </form>
+
+    <form action="profile">
+        <button type="menu">Profile</button>
+    </form>
+    
+</body>
+</html> 
