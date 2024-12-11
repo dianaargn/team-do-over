@@ -5,7 +5,7 @@
         <a href="{{ url_for('logout') }}" class="button">Logout</a>
     </div>
     <h1>Welcome, {{ current_user.username }}!</h1>
-    <p><a href="{{ url_for('profile') }}" class="button" style="margin-top:0;">Back to Profile</a></p>
+    <p><a href="{{ url_for('profile') }}" class="button">Back to Profile</a></p>
 
     <h2>Your Folders</h2>
     {% if folders %}
@@ -33,7 +33,7 @@
         <li class="workout-item">
             <strong>{{ workout.name or (workout.template.name if workout.template else 'Workout') }}</strong><br>
             <small>{{ workout.date.strftime('%B %d, %Y at %I:%M %p') }}</small><br>
-            <a href="{{ url_for('view_workout', workout_id=workout.id) }}" class="button" style="margin-top:10px;">View</a>
+            <a href="{{ url_for('view_workout', workout_id=workout.id) }}" class="button">View</a>
         </li>
         {% endfor %}
     </ul>

@@ -1,3 +1,13 @@
+:root {
+    --primary-color: #007AFF;
+    --primary-hover-color: #0056b3;
+    --danger-color: #dc3545;
+    --danger-hover-color: #c82333;
+    --border-color: #ddd;
+    --background-color: #f5f5f5;
+    --font-color: #333;
+}
+
 /* General styling */
 * {
     box-sizing: border-box;
@@ -7,8 +17,8 @@
 }
 
 body {
-    background-color: #f5f5f5;
-    color: #333;
+    background-color:var(--background-color);
+    color: var(--font-color);
     margin: 0;
     padding: 20px;
 }
@@ -39,7 +49,7 @@ h2 {
 
 /* Buttons */
 button, a.button {
-    background-color: #007AFF;
+    background-color: var(--primary-color);
     color: white;
     border: none;
     padding: 12px 24px;
@@ -53,7 +63,7 @@ button, a.button {
 }
 
 button:hover, a.button:hover {
-    background-color: #0056b3;
+    background-color: var(--primary-hover-color);
 }
 
 button:active, a.button:active {
@@ -102,7 +112,13 @@ input, textarea {
     gap: 10px;
     margin-top: 20px;
 }
-
+.add-folder-form input {
+    flex: 1;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 16px;
+}
 /* Navigation */
 .bottom-nav {
     position: fixed;
@@ -119,4 +135,112 @@ input, textarea {
 .bottom-nav a {
     color: #333;
     font-weight: bold;
+}
+/* Logout */
+.logout {
+    text-align: right;
+    margin-bottom: 20px;
+}
+
+.logout a {
+    display: inline-block;
+    background-color: #007AFF;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 16px;
+    text-decoration: none;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+.logout a:hover {
+    background-color: #0056b3;
+}
+/* Folder and Workout Lists */
+
+.folder-list, .workout-list {
+    margin-top: 10px;
+}
+
+.folder-item, .workout-item {
+    padding: 15px;
+    border-bottom: 1px solid #eee;
+}
+
+.folder-item:last-child, .workout-item:last-child {
+    border-bottom: none;
+}
+
+.folder-link {
+    display: block;
+    color: #007AFF;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.folder-link:hover {
+    text-decoration: underline;
+}
+/* Labels */
+label {
+    display: block;
+    margin-bottom: 5px;
+    color: #666;
+    font-weight: 500;
+}
+/* Form Inputs */
+input, select {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 16px;
+    margin-bottom: 10px;
+}
+/* Exercise List */
+.exercise-list {
+    list-style: none;
+    padding: 0;
+    margin: 20px 0;
+}
+
+.exercise-item {
+    padding: 15px;
+    border-bottom: 1px solid #eee;
+}
+
+.exercise-item:last-child {
+    border-bottom: none;
+}
+
+.exercise-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.exercise-details {
+    color: #666;
+    font-size: 14px;
+}
+
+/* Delete Button */
+.delete-button {
+    background-color: var(--danger-color);
+    border: none;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.delete-button:hover {
+    background-color: var(--danger-hover-color);
+}
+
+.delete-button:active {
+    transform: scale(0.98);
 }
