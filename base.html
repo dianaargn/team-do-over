@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Workout App</title>
+  <style>
+      * {
+          box-sizing: border-box;
+          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      }
+      body {
+          margin: 0;
+          padding: 20px;
+          background: #f5f5f5;
+      }
+      .container {
+          max-width: 600px;
+          margin: 0 auto;
+          background: white;
+          border-radius: 12px;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+          padding: 20px;
+      }
+      h1 {
+          font-size: 24px;
+          margin: 0 0 20px 0;
+      }
+      h2 {
+          font-size: 20px;
+          margin: 20px 0 10px 0;
+      }
+      input {
+          width: 100%;
+          padding: 12px;
+          margin-bottom: 10px;
+          border: 1px solid #ddd;
+          border-radius: 8px;
+          font-size: 16px;
+      }
+      button, a.button {
+          background: #007AFF;
+          color: white;
+          border: none;
+          padding: 12px 24px;
+          border-radius: 8px;
+          font-size: 16px;
+          cursor: pointer;
+          text-decoration: none;
+          display: inline-block;
+          margin-top: 10px;
+      }
+      button:hover, a.button:hover {
+          background: #0056b3;
+      }
+      .folder-list, .workout-list {
+          list-style: none;
+          padding: 0;
+          margin: 0;
+      }
+      .folder-item, .workout-item {
+          padding: 15px;
+          border-bottom: 1px solid #eee;
+      }
+      .folder-item:last-child, .workout-item:last-child {
+          border-bottom: none;
+      }
+      .folder-link {
+          display: block;
+          color: #007AFF;
+          text-decoration: none;
+          font-weight: 500;
+      }
+      .folder-link:hover {
+          text-decoration: underline;
+      }
+      .add-folder-form {
+          display: flex;
+          gap: 10px;
+          margin-top: 20px;
+      }
+      .add-folder-form input {
+          flex: 1;
+      }
+      .logout {
+          text-align: right;
+          margin-bottom: 20px;
+      }
+
+      .bottom-nav {
+          position: fixed;
+          bottom: 0;
+          width: 100%;
+          background: #eee;
+          display: flex;
+          justify-content: space-around;
+          padding: 10px 0;
+          border-top: 1px solid #ccc;
+      }
+      .bottom-nav a {
+          text-decoration: none;
+          color: #333;
+          font-weight: bold;
+      }
+  </style>
+</head>
+<body>
+  {% block content %}{% endblock %}
+  
+  <nav class="bottom-nav">
+    <a href="{{ url_for('profile') }}">Profile</a>
+    <a href="{{ url_for('history') }}">History</a>
+    <a href="{{ url_for('start_workout_page') }}">Start</a>
+  </nav>
+</body>
+</html>

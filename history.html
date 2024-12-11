@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+    <div class="logout">
+        <a href="{{ url_for('logout') }}" class="button">Logout</a>
+    </div>
+    <h1>Workout History</h1>
+
+    {% if workouts %}
+        <ul class="workout-list">
+            {% for w in workouts %}
+            <li class="workout-item">
+                <strong>{{ w.name or (w.template.name if w.template else 'Workout') }}</strong><br>
+                <small>{{ w.date.strftime('%B %d, %Y at %I:%M %p') }}</small><br>
+                {% if w.completed %}
+                <small style="color:green;font-weight:bold;">Completed</small><br>
+                {% else %}
+                <small style="color:orange;font-weight:bold;">In Progress</small><br>
+                {% endif %}
+                
+                {% if w.sets %}
+                <h3 style="margin-top:10px;font-size:16px;">Sets Performed:</h3>
+                <ul class="set-list">
+                    {% set total_volume = 0 %}
+                    {% for s in w.sets %}
+                    {% set set_volume = (s.weight if s.weight else 0) * (s.reps if s.reps else 0) %}
+                    {% set total_volume = total_volume + set_volume %}
+                    <li class="set-item">
+                        <strong>{{ s.exercise.name }}</strong><br>
+                        Weight: {{ s.weight if s.weight else 0 }} | Reps: {{ s.reps if s.reps else 0 }} | 
+                        RPE: {{ s.rpe if s.rpe else 'N/A' }} | RIR: {{ s.rir if s.rir else 'N/A' }}<br>
+                        Volume: {{ set_volume }}
+                    </li>
+                    {% endfor %}
+                </ul>
+                <p><strong>Total Volume:</strong> {{ total_volume }}</p>
+                {% else %}
+                <p>No sets recorded for this workout.</p>
+                {% endif %}
+
+                {% if w.duration is defined %}
+                <p><strong>Duration:</strong> {{ w.duration }} minutes</p>
+                {% endif %}
+            </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>No past workouts found.</p>
+    {% endif %}
+    <p><a href="{{ url_for('profile') }}" class="button">Back to Profile</a></p>
+</div>
+{% endblock %}
