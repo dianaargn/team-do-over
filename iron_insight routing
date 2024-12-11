@@ -315,3 +315,69 @@ def start_workout_page():
     return render_template('start_workout.html', folders=folders)
 
 #stats is very hard to program
+@app.route('/stats')
+@login_required
+def stats():
+    # Get all unique exercises the user has performed
+    exercises_performed = db.session.query(Exercise)\
+        .join(WorkoutSet)\
+        .join(Workout)\
+        .filter(Workout.user_id == current_user.id)\
+        .distinct()\
+        .all()
+    
+    exercise_stats = {}
+    for exercise in exercises_performed:
+        # Get all workouts with this exercise
+        workouts = db.session.query(Workout)\
+            .join(WorkoutSet)\
+            .filter(
+                Workout.user_id == current_user.id,
+                WorkoutSet.exercise_id == exercise.id,
+                WorkoutSet.completed == True,
+                WorkoutSet.weight.isnot(None),
+                WorkoutSet.reps.isnot(None)
+            )\
+            .distinct()\
+            .order_by(Workout.date)\
+            .all()
+        
+        data_points = []
+        for workout in workouts:
+            # Get all sets for this exercise in this workout
+            sets = WorkoutSet.query.filter(
+                WorkoutSet.workout_id == workout.id,
+                WorkoutSet.exercise_id == exercise.id,
+                WorkoutSet.completed == True,
+                WorkoutSet.weight.isnot(None),
+                WorkoutSet.reps.isnot(None)
+            ).all()
+            
+            # Find the set with highest calculated 1RM
+            max_e1rm = 0
+            best_set = None
+            
+            for set in sets:
+                # Calculate e1RM based on RPE when available
+                if set.rpe is not None:
+                    e1rm = set.weight * (1 + set.reps/30) * (set.rpe/10)
+                else:
+                    e1rm = set.weight * (1 + set.reps/30)
+                
+                if e1rm > max_e1rm:
+                    max_e1rm = e1rm
+                    best_set = set
+            
+            if best_set:  # Only add if we found a valid set
+                data_points.append({
+                    'date': workout.date.strftime('%Y-%m-%d'),
+                    'one_rm': round(max_e1rm, 2),
+                    'weight': best_set.weight,
+                    'reps': best_set.reps,
+                    'rpe': best_set.rpe
+                })
+        
+        if data_points:  # Only add exercises with actual data
+            exercise_stats[exercise.name] = data_points
+    
+    return render_template('stats.html', exercise_stats=exercise_stats)
