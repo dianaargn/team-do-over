@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mx-auto p-4">
+    <h1 class="text-2xl font-bold mb-4">Exercise Statistics</h1>
+    
+    {% if exercise_stats %}
+        {% for exercise_name, data_points in exercise_stats.items() %}
+        <div class="mb-8 p-4 border rounded shadow">
+            <h2 class="text-xl font-semibold mb-4">{{ exercise_name }}</h2>
+            <div style="height: 400px; position: relative;">
+                <canvas id="chart_{{ exercise_name|replace(' ', '_') }}"></canvas>
+            </div>
+        </div>
+        {% endfor %}
+        
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const exerciseStats = JSON.parse('{{ exercise_stats|tojson|safe }}');
+                
+                for (const [exerciseName, dataPoints] of Object.entries(exerciseStats)) {
+                    const canvasId = "chart_" + exerciseName.replace(/\s+/g, '_');
+                    const ctx = document.getElementById(canvasId).getContext('2d');
+                    
+                    const dates = dataPoints.map(point => point.date);
+                    const oneRMs = dataPoints.map(point => point.one_rm);
+                    
+                    new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: dates,
+                            datasets: [{
+                                label: 'Estimated 1RM',
+                                data: oneRMs,
+                                borderColor: 'rgb(75, 192, 192)',
+                                backgroundColor: 'rgba(75, 192, 192, 0.1)',
+                                fill: true,
+                                tension: 0.1
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: {
+                                x: {
+                                    type: 'category',
+                                    title: {
+                                        display: true,
+                                        text: 'Date'
+                                    }
+                                },
+                                y: {
+                                    title: {
+                                        display: true,
+                                        text: 'Estimated 1RM (kg/lbs)'
+                                    },
+                                    beginAtZero: false
+                                }
+                            },
+                            plugins: {
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            const point = dataPoints[context.dataIndex];
+                                            const labels = [
+                                                `e1RM: ${point.one_rm}`,
+                                                `Weight: ${point.weight}`,
+                                                `Reps: ${point.reps}`
+                                            ];
+                                            if (point.rpe) {
+                                                labels.push(`RPE: ${point.rpe}`);
+                                            }
+                                            return labels;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+            });
+        </script>
+    {% else %}
+        <p class="text-gray-600">No exercise data available. Complete some workouts to see your progress!</p>
+    {% endif %}
+</div>
+{% endblock %}
