@@ -1,0 +1,254 @@
+<!-- view_workout.html -->
+
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+    .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+    .exercise-container {
+        margin: 20px 0;
+        padding: 15px;
+        border: 1px solid #dee2e6;
+        border-radius: 5px;
+    }
+    .exercise-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+    }
+    .set-container {
+        margin: 10px 0;
+        padding: 10px;
+        background-color: #f8f9fa;
+        border-radius: 5px;
+    }
+    .set-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .set-inputs {
+        display: flex;
+        gap: 15px;
+        flex-grow: 1;
+    }
+    .button {
+        padding: 5px 15px;
+        border: none;
+        border-radius: 3px;
+        cursor: pointer;
+        background-color: #007bff;
+        color: white;
+        text-decoration: none;
+    }
+    .delete-button {
+        background-color: #dc3545;
+    }
+    .delete-button:hover {
+        background-color: #c82333;
+    }
+    .add-exercise-form {
+        margin: 20px 0;
+        padding: 15px;
+        background-color: #f8f9fa;
+        border-radius: 5px;
+    }
+    .last-performance {
+        font-size: 0.9em;
+        color: #6c757d;
+        margin-bottom: 5px;
+    }
+    .finish-button {
+        background-color: #28a745;
+    }
+    .finish-button:hover {
+        background-color: #218838;
+    }
+    .workout-actions {
+        margin-top: 20px;
+        text-align: right;
+    }
+</style>
+
+<div class="container">
+    <div class="logout">
+        <a href="{{ url_for('logout') }}" class="button">Logout</a>
+    </div>
+
+    <h1>{{ workout.name or "Workout" }}</h1>
+    <p><strong>Date:</strong> {{ workout.date.strftime('%B %d, %Y at %I:%M %p') }}</p>
+
+    {% if workout.completed %}
+    <div class="status-message completed">
+        This workout is completed.
+    </div>
+    {% else %}
+    <div class="status-message in-progress">
+        This workout is in progress.
+    </div>
+
+    <div class="add-exercise-form">
+        <h3>Add Exercise</h3>
+        <form action="{{ url_for('add_exercise_to_workout', workout_id=workout.id) }}" method="post">
+            <label for="exercise_id">Exercise:</label>
+            <select name="exercise_id" id="exercise_id" required>
+                <option value="">Select Exercise</option>
+                {% for exercise in available_exercises %}
+                <option value="{{ exercise.id }}">{{ exercise.name }} ({{ exercise.category }})</option>
+                {% endfor %}
+            </select>
+            <label for="sets">Sets:</label>
+            <input type="number" name="sets" id="sets" value="1" min="1" max="10" required>
+            <button type="submit" class="button">Add Exercise</button>
+        </form>
+    </div>
+    {% endif %}
+
+    <h2>Exercises</h2>
+
+    {% if workout.sets %}
+    <!-- Wrap all sets in a single form -->
+    <form action="{{ url_for('finish_workout', workout_id=workout.id) }}" method="post">
+        {% for exercise_name, sets in workout.sets|groupby('exercise.name') %}
+        <div class="exercise-container">
+            <div class="exercise-header">
+                <h3>{{ exercise_name }}</h3>
+                {% if not workout.completed %}
+                <form action="{{ url_for('delete_exercise_from_workout', workout_id=workout.id, exercise_id=sets[0].exercise_id) }}" 
+                      method="post" 
+                      style="display: inline;" 
+                      onsubmit="return confirm('Are you sure you want to remove this exercise and all its sets?');">
+                    <button type="submit" class="button delete-button">Delete Exercise</button>
+                </form>
+                {% endif %}
+            </div>
+            <div class="sets-container">
+                {% for s in sets %}
+                <div class="set-container">
+                    {% if last_performances.get(s.exercise.id, {}).get(loop.index0) %}
+                    {% set last_perf = last_performances[s.exercise.id][loop.index0] %}
+                    <div class="last-performance">
+                        <strong>Last time (Set {{ loop.index }}):</strong> 
+                        Weight: {{ last_perf.weight }}lbs, 
+                        Reps: {{ last_perf.reps }}
+                        {% if last_perf.rpe %}, RPE: {{ last_perf.rpe }}{% endif %}
+                        ({{ last_perf.date.strftime('%B %d, %Y') }})
+                    </div>
+                    {% endif %}
+
+                    <div class="set-row">
+                        <div class="set-number">Set {{ loop.index }}</div>
+                        <div class="set-inputs" data-set-id="{{ s.id }}">
+                            <!-- Assign unique names for each input based on set ID -->
+                            <div class="input-column">
+                                <label for="weight_{{ s.id }}">Weight (lbs/kg):</label>
+                                <input type="number" 
+                                       name="sets[{{ s.id }}][weight]" 
+                                       id="weight_{{ s.id }}"
+                                       step="0.5" 
+                                       min="0" 
+                                       value="{{ s.weight or '' }}" 
+                                       {% if workout.completed %}readonly{% endif %}>
+                            </div>
+                            <div class="input-column">
+                                <label for="reps_{{ s.id }}">Reps:</label>
+                                <input type="number" 
+                                       name="sets[{{ s.id }}][reps]" 
+                                       id="reps_{{ s.id }}"
+                                       min="0" 
+                                       value="{{ s.reps or '' }}" 
+                                       {% if workout.completed %}readonly{% endif %}>
+                            </div>
+                            <div class="input-column">
+                                <label for="rpe_{{ s.id }}">RPE (1-10):</label>
+                                <input type="number" 
+                                       name="sets[{{ s.id }}][rpe]" 
+                                       id="rpe_{{ s.id }}"
+                                       step="0.5" 
+                                       min="1" 
+                                       max="10" 
+                                       value="{{ s.rpe or '' }}" 
+                                       {% if workout.completed %}readonly{% endif %}>
+                            </div>
+                            <div class="input-column">
+                                <label for="rir_{{ s.id }}">RIR (0-9):</label>
+                                <input type="number" 
+                                       name="sets[{{ s.id }}][rir]" 
+                                       id="rir_{{ s.id }}"
+                                       min="0" 
+                                       max="9" 
+                                       value="{{ s.rir or '' }}" 
+                                       {% if workout.completed %}readonly{% endif %}>
+                            </div>
+                        </div>
+                        {% if not workout.completed %}
+                        <form action="{{ url_for('delete_set', set_id=s.id) }}" method="post" style="display: inline;" 
+                              onsubmit="return confirm('Are you sure you want to delete this set?');">
+                            <button type="submit" class="button delete-button">Delete Set</button>
+                        </form>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% if not workout.completed %}
+            <form action="{{ url_for('add_set_to_exercise', workout_id=workout.id, exercise_id=sets[0].exercise_id) }}" 
+                  method="post" class="add-set-form">
+                <button type="submit" class="button">Add Set</button>
+            </form>
+            {% endif %}
+        </div>
+        {% endfor %}
+
+        {% if not workout.completed %}
+        <!-- Finish Workout Button -->
+        <div class="workout-actions">
+            <button type="submit" class="button finish-button">Finish Workout</button>
+        </div>
+        {% endif %}
+    </form>
+    {% else %}
+    <p>No sets found for this workout.</p>
+    {% endif %}
+
+    {% if not workout.completed %}
+    <!-- Optional: Timer Script -->
+    <script>
+        // Get the start time from the server-rendered template
+        const startTime = new Date("{{ workout.date.isoformat() }}").getTime();
+
+        // Create a timer element if it doesn't exist
+        let timerElement = document.getElementById('timer');
+        if (!timerElement) {
+            timerElement = document.createElement('div');
+            timerElement.id = 'timer';
+            timerElement.style.fontSize = '1.2em';
+            timerElement.style.marginTop = '10px';
+            document.querySelector('.status-message').appendChild(timerElement);
+        }
+
+        function updateTimer() {
+            const now = new Date().getTime();
+            const elapsed = now - startTime;
+
+            const totalSeconds = Math.floor(elapsed / 1000);
+            const hours = String(Math.floor(totalSeconds / 3600)).padStart(2, '0');
+            const minutes = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, '0');
+            const seconds = String(totalSeconds % 60).padStart(2, '0');
+
+            timerElement.textContent = `Elapsed Time: ${hours}:${minutes}:${seconds}`;
+        }
+
+        // Update the timer immediately and then every second
+        updateTimer();
+        setInterval(updateTimer, 1000);
+    </script>
+    {% endif %}
+
+</div>
+{% endblock %}

@@ -1,0 +1,130 @@
+{% extends "base.html" %} {% block content %}
+
+<div class="container">
+    <div class="logout">
+        <a href="{{ url_for('logout') }}" class="button">Logout</a>
+    </div>
+
+    <h1>Workout History</h1>
+
+    {% if workouts %}
+        {% for w in workouts %}
+            <div class="workout-entry">
+                <h2>{{ w.name or (w.template.name if w.template else 'Workout') }}</h2>
+                <small>{{ w.date.strftime('%B %d, %Y at %I:%M %p') }}</small><br>
+                {% if w.completed %}
+                    <small class="status completed">Completed</small>
+                {% else %}
+                    <small class="status in-progress">In Progress</small>
+                {% endif %}
+
+                {% if w.sets %}
+                    <h3>Sets Performed:</h3>
+                    {% set ns = namespace(total_weight=0, current_exercise=none, current_group=[]) %}
+                    
+                    {% for s in w.sets %}
+                        {% if ns.current_exercise != s.exercise.name or (ns.current_group and ns.current_group[-1].id != s.id - 1) %}
+                            {% if ns.current_group %}
+                                </div>
+                            {% endif %}
+                            
+                            {% set ns.current_exercise = s.exercise.name %}
+                            {% set ns.current_group = [s] %}
+                            
+                            <div class="exercise-group">
+                                <h4>{{ s.exercise.name }}</h4>
+                        {% else %}
+                            {% set ns.current_group = ns.current_group + [s] %}
+                        {% endif %}
+
+                        <div class="set-entry">
+                            Weight: {{ s.weight if s.weight else 0 }} | 
+                            Reps: {{ s.reps if s.reps else 0 }} | 
+                            RPE: {{ s.rpe if s.rpe else 'N/A' }} | 
+                            RIR: {{ s.rir if s.rir else 'N/A' }}
+                        </div>
+
+                        {% if s.weight is not none and s.reps is not none %}
+                            {% set ns.total_weight = ns.total_weight + (s.weight * s.reps) %}
+                        {% endif %}
+
+                        {% if loop.last %}
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+
+                    <div class="total-weight">
+                        <strong>Total Weight:</strong> {{ ns.total_weight }}
+                    </div>
+                {% else %}
+                    <p>No sets recorded for this workout.</p>
+                {% endif %}
+            </div>
+        {% endfor %}
+    {% else %}
+        <p>No past workouts found.</p>
+    {% endif %}
+
+    <a href="{{ url_for('profile') }}" class="button">Back to Profile</a>
+</div>
+
+<style>
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.logout {
+    text-align: right;
+    margin-bottom: 20px;
+}
+
+.button {
+    padding: 8px 16px;
+    background-color: #3B82F6;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    text-decoration: none;
+}
+
+.workout-entry {
+    margin-bottom: 30px;
+    padding: 20px;
+    border: 1px solid #E5E7EB;
+    border-radius: 8px;
+}
+
+.status {
+    font-weight: bold;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.completed {
+    color: #4CAF50;
+}
+
+.in-progress {
+    color: #FF9800;
+}
+
+.exercise-group {
+    margin: 15px 0;
+    padding-left: 15px;
+}
+
+.set-entry {
+    margin: 5px 0;
+    padding: 5px 0;
+}
+
+.total-weight {
+    margin-top: 15px;
+    padding-top: 10px;
+    border-top: 1px solid #E5E7EB;
+}
+</style>
+
+{% endblock %}

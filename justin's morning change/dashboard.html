@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="dashboard-container">
+    {% if current_workout %}
+    <div class="resume-workout-container">
+        <h3>You have an ongoing workout!</h3>
+        <a href="{{ url_for('view_workout', workout_id=current_workout.id) }}" class="button">Resume Workout</a>
+    </div>
+    {% endif %}
+
+    <div class="folders-section">
+        <h2>Workout Templates</h2>
+        <div class="folders-container">
+            {% for folder in folders %}
+            <div class="folder">
+                <h3>{{ folder.name }}</h3>
+                <div class="templates-list">
+                    {% for template in folder.templates %}
+                    <div class="template">
+                        <span>{{ template.name }}</span>
+                        <div class="template-actions">
+                            <a href="{{ url_for('edit_template', template_id=template.id) }}" class="button edit-button">Edit</a>
+                            <form action="{{ url_for('start_workout', template_id=template.id) }}" method="post" class="inline-form">
+                                <button type="submit" class="button start-button">Start</button>
+                            </form>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                <form action="{{ url_for('create_template', folder_id=folder.id) }}" method="post" class="template-form">
+                    <input type="text" name="name" placeholder="New template name" required>
+                    <button type="submit" class="button">Create Template</button>
+                </form>
+            </div>
+            {% endfor %}
+        </div>
+
+        <form action="{{ url_for('create_folder') }}" method="post" class="folder-form">
+            <input type="text" name="name" placeholder="New folder name" required>
+            <button type="submit" class="button">Create Folder</button>
+        </form>
+    </div>
+
+    {% if recent_workouts %}
+    <div class="recent-workouts-section">
+        <h2>Recent Workouts</h2>
+        <div class="recent-workouts-list">
+            {% for workout in recent_workouts %}
+            <div class="workout-item">
+                <span class="workout-name">{{ workout.name }}</span>
+                <span class="workout-date">{{ workout.date.strftime('%B %d, %Y') }}</span>
+                <a href="{{ url_for('view_workout', workout_id=workout.id) }}" class="button view-button">View</a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.dashboard-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.resume-workout-container {
+    background-color: #fff3cd;
+    border: 1px solid #ffeeba;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.folder {
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 20px;
+}
+
+.template {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+.template:last-child {
+    border-bottom: none;
+}
+
+.template-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.button {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.edit-button {
+    background-color: #6c757d;
+    color: white;
+}
+
+.start-button {
+    background-color: #28a745;
+    color: white;
+}
+
+.view-button {
+    background-color: #007bff;
+    color: white;
+}
+
+.inline-form {
+    display: inline;
+}
+
+.workout-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    margin-bottom: 10px;
+}
+
+.template-form, .folder-form {
+    margin-top: 15px;
+    display: flex;
+    gap: 10px;
+}
+
+.template-form input, .folder-form input {
+    flex: 1;
+    padding: 8px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+}
+</style>
+{% endblock %}
