@@ -290,6 +290,153 @@ def create_folder():
 
 # ----------------------- Workout Template Routes -----------------------
 
+@app.route('/template/exercise/<int:template_id>/<int:exercise_id>/update', methods=['POST'])
+@login_required
+def update_template_exercise(template_id, exercise_id):
+    template = WorkoutTemplate.query.get_or_404(template_id)
+    exercise = TemplateExercise.query.get_or_404(exercise_id)
+    
+    if template.folder.user_id != current_user.id:
+        flash("You don't have permission to edit this template.", 'error')
+        return redirect(url_for('dashboard'))
+    
+    exercise.sets = int(request.form.get('sets'))
+    exercise.reps = request.form.get('reps') or None
+    
+    weight = request.form.get('weight')
+    exercise.weight = float(weight) if weight else None
+    
+    rpe = request.form.get('rpe')
+    exercise.rpe = float(rpe) if rpe else None
+    
+    rir = request.form.get('rir')
+    exercise.rir = int(rir) if rir else None
+    
+    exercise.notes = request.form.get('notes') or None
+    
+    db.session.commit()
+    flash('Exercise updated successfully.', 'success')
+    return redirect(url_for('edit_template', template_id=template_id))
+
+@app.route('/template/<int:template_id>/delete', methods=['POST'])
+@login_required
+def delete_template(template_id):
+    template = WorkoutTemplate.query.get_or_404(template_id)
+    if template.folder.user_id != current_user.id:
+        flash("You don't have permission to delete this template.", 'error')
+        return redirect(url_for('dashboard'))
+    
+    # Delete all associated template exercises first
+    TemplateExercise.query.filter_by(template_id=template_id).delete()
+    
+    db.session.delete(template)
+    db.session.commit()
+    flash('Template deleted successfully.', 'success')
+    return redirect(url_for('dashboard'))
+
+@app.route('/template/create/<int:folder_id>', methods=['GET', 'POST'])
+@login_required
+def create_template(folder_id):
+    folder = Folder.query.get_or_404(folder_id)
+    if folder.user_id != current_user.id:
+        return redirect(url_for('dashboard'))
+
+    if request.method == 'POST':
+        try:
+            template_name = request.form.get('name')
+            if not template_name:
+                flash('Template name is required', 'error')
+                return redirect(url_for('view_folder', folder_id=folder_id))
+
+            template = WorkoutTemplate(
+                name=template_name,
+                folder_id=folder_id
+            )
+            db.session.add(template)
+            db.session.commit()
+            flash('Template created successfully', 'success')
+            return redirect(url_for('view_folder', folder_id=folder_id))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error creating template: {str(e)}', 'error')
+            return redirect(url_for('view_folder', folder_id=folder_id))
+    else:
+        return redirect(url_for('view_folder', folder_id=folder_id))
+
+@app.route('/template/<int:template_id>/edit')
+@login_required
+def edit_template(template_id):
+    template = WorkoutTemplate.query.get_or_404(template_id)
+    if template.folder.user_id != current_user.id:
+        return redirect(url_for('dashboard'))
+    exercises = Exercise.query.order_by(Exercise.category, Exercise.name).all()
+    return render_template('edit_template.html', template=template, exercises=exercises)
+
+@app.route('/template/exercise/add/<int:template_id>', methods=['POST'])
+@login_required
+def add_template_exercise(template_id):
+    template = WorkoutTemplate.query.get_or_404(template_id)
+    if template.folder.user_id != current_user.id:
+        return redirect(url_for('dashboard'))
+
+    exercise_id = request.form.get('exercise_id')
+    sets = request.form.get('sets')
+    reps = request.form.get('reps')
+    weight = request.form.get('weight')
+    rpe = request.form.get('rpe')
+    rir = request.form.get('rir')
+    notes = request.form.get('notes')
+
+    if reps == '':
+        reps = None
+
+    if weight == '':
+        weight = None
+    else:
+        weight = float(weight) if weight else None
+
+    if rpe == '':
+        rpe = None
+    else:
+        rpe = float(rpe) if rpe else None
+
+    if rir == '':
+        rir = None
+    else:
+        rir = int(rir) if rir else None
+
+    sets = int(sets)
+
+    exercise = TemplateExercise(
+        template_id=template_id,
+        exercise_id=int(exercise_id),
+        sets=sets,
+        reps=reps,
+        weight=weight,
+        rpe=rpe,
+        rir=rir,
+        notes=notes
+    )
+
+    db.session.add(exercise)
+    db.session.commit()
+    flash('Exercise added to template', 'success')
+    return redirect(url_for('edit_template', template_id=template_id))
+
+@app.route('/template/exercise/delete/<int:template_id>/<int:exercise_id>', methods=['POST'])
+@login_required
+def delete_template_exercise(template_id, exercise_id):
+    template = WorkoutTemplate.query.get_or_404(template_id)
+    if template.folder.user_id != current_user.id:
+        return redirect(url_for('dashboard'))
+
+    exercise = TemplateExercise.query.get_or_404(exercise_id)
+    db.session.delete(exercise)
+    db.session.commit()
+    flash('Exercise removed from template', 'success')
+    return redirect(url_for('edit_template', template_id=template_id))
+
+
 # ----------------------- Workout Routes -----------------------
 
 @app.route('/workout/<int:workout_id>/add_exercise', methods=['POST'])
@@ -438,179 +585,6 @@ def finish_workout(workout_id):
         db.session.rollback()
         flash(f"Error saving workout: {str(e)}", "error")
         return redirect(url_for('view_workout', workout_id=workout_id))
-
-@app.route('/workout/<int:workout_id>')
-@login_required
-def view_workout(workout_id):
-    workout = Workout.query.get_or_404(workout_id)
-    if workout.user_id != current_user.id:
-        flash("You don't have access to this workout.", 'error')
-        return redirect(url_for('dashboard'))
-
-    available_exercises = Exercise.query.order_by(Exercise.category, Exercise.name).all()
-
-    # Get previous performance data for each exercise
-    last_performances = {}
-    for s in workout.sets:
-        if s.exercise_id not in last_performances:
-            # Get the last workout that included this exercise
-            previous_set = WorkoutSet.query.join(Workout).filter(
-                Workout.user_id == current_user.id,
-                Workout.id != workout.id,
-                WorkoutSet.exercise_id == s.exercise_id,
-                WorkoutSet.completed == True,
-                WorkoutSet.weight.isnot(None),
-                WorkoutSet.reps.isnot(None)
-            ).order_by(Workout.date.desc()).first()
-
-            if previous_set:
-                last_performances[s.exercise_id] = {
-                    'weight': previous_set.weight,
-                    'reps': previous_set.reps,
-                    'rpe': previous_set.rpe,
-                    'date': previous_set.workout.date
-                }
-
-    return render_template('view_workout.html', 
-                           workout=workout, 
-                           last_performances=last_performances,
-                           available_exercises=available_exercises)
-
-
-# ----------------------- Workout Routes -----------------------
-
-@app.route('/workout/<int:workout_id>/add_exercise', methods=['POST'])
-@login_required
-def add_exercise_to_workout(workout_id):
-    workout = Workout.query.get_or_404(workout_id)
-    if workout.user_id != current_user.id:
-        flash("You don't have access to this workout.", 'error')
-        return redirect(url_for('dashboard'))
-    
-    exercise_id = request.form.get('exercise_id')
-    sets = request.form.get('sets', 1)
-
-    if not exercise_id or not sets:
-        flash('Exercise and number of sets are required.', 'error')
-        return redirect(url_for('view_workout', workout_id=workout_id))
-
-    try:
-        exercise_id = int(exercise_id)
-        sets = int(sets)
-    except ValueError:
-        flash('Invalid input for exercise or sets.', 'error')
-        return redirect(url_for('view_workout', workout_id=workout_id))
-
-    for _ in range(sets):
-        new_set = WorkoutSet(
-            workout_id=workout_id,
-            exercise_id=exercise_id,
-            completed=False
-        )
-        db.session.add(new_set)
-    
-    db.session.commit()
-    flash('Exercise added to workout.', 'success')
-    return redirect(url_for('view_workout', workout_id=workout_id))
-
-@app.route('/workout/<int:workout_id>/exercise/<int:exercise_id>/add_set', methods=['POST'])
-@login_required
-def add_set_to_exercise(workout_id, exercise_id):
-    workout = Workout.query.get_or_404(workout_id)
-    if workout.user_id != current_user.id:
-        flash("You don't have access to this workout.", 'error')
-        return redirect(url_for('dashboard'))
-    
-    new_set = WorkoutSet(
-        workout_id=workout_id,
-        exercise_id=exercise_id,
-        completed=False
-    )
-    db.session.add(new_set)
-    db.session.commit()
-    
-    flash('Set added.', 'success')
-    return redirect(url_for('view_workout', workout_id=workout_id))
-
-@app.route('/workout/<int:workout_id>/finish', methods=['POST'])
-@login_required
-def finish_workout(workout_id):
-    workout = Workout.query.get_or_404(workout_id)
-    if workout.user_id != current_user.id:
-        flash("You don't have access to this workout.", 'error')
-        return redirect(url_for('dashboard'))
-
-    if workout.completed:
-        flash("Workout is already completed.", 'info')
-        return redirect(url_for('dashboard'))
-
-    # Retrieve all sets data from the form
-    sets_dict = {}
-    for key in request.form:
-        if key.startswith('sets['):
-            # Extract set_id and field name
-            parts = key.split('[')
-            if len(parts) < 3:
-                continue  # Skip invalid keys
-            set_id = parts[1].rstrip(']')
-            field = parts[2].rstrip(']')
-            if set_id not in sets_dict:
-                sets_dict[set_id] = {}
-            sets_dict[set_id][field] = request.form.get(key)
-
-    # Iterate over each set and update the corresponding WorkoutSet
-    for set_id, fields in sets_dict.items():
-        workout_set = WorkoutSet.query.get(set_id)
-        if not workout_set or workout_set.workout_id != workout.id:
-            continue  # Skip invalid sets
-
-        # Update fields if they exist in the form
-        if 'weight' in fields and fields['weight']:
-            try:
-                workout_set.weight = float(fields['weight'])
-            except ValueError:
-                flash(f"Invalid weight for set {set_id}. Please enter a valid number.", 'error')
-                return redirect(url_for('view_workout', workout_id=workout_id))
-
-        if 'reps' in fields and fields['reps']:
-            try:
-                workout_set.reps = int(fields['reps'])
-            except ValueError:
-                flash(f"Invalid reps for set {set_id}. Please enter a valid integer.", 'error')
-                return redirect(url_for('view_workout', workout_id=workout_id))
-
-        if 'rpe' in fields and fields['rpe']:
-            try:
-                rpe_value = float(fields['rpe'])
-                if not (1 <= rpe_value <= 10):
-                    raise ValueError
-                workout_set.rpe = rpe_value
-            except ValueError:
-                flash(f"Invalid RPE for set {set_id}. Please enter a number between 1 and 10.", 'error')
-                return redirect(url_for('view_workout', workout_id=workout_id))
-
-        if 'rir' in fields and fields['rir']:
-            try:
-                rir_value = int(fields['rir'])
-                if not (0 <= rir_value <= 9):
-                    raise ValueError
-                workout_set.rir = rir_value
-            except ValueError:
-                flash(f"Invalid RIR for set {set_id}. Please enter an integer between 0 and 9.", 'error')
-                return redirect(url_for('view_workout', workout_id=workout_id))
-
-    # Optionally, verify that all sets have been filled out
-    incomplete_sets = WorkoutSet.query.filter_by(workout_id=workout_id, completed=False).all()
-    for s in incomplete_sets:
-        if s.weight is None or s.reps is None:
-            flash("Please fill out all weight and reps before finishing the workout.", 'error')
-            return redirect(url_for('view_workout', workout_id=workout_id))
-
-    # Mark the workout as completed
-    workout.completed = True
-    db.session.commit()
-    flash("Workout logged successfully!", "success")
-    return redirect(url_for('dashboard'))
 
 @app.route('/workout/<int:workout_id>')
 @login_required
@@ -812,9 +786,179 @@ def delete_set(set_id):
     flash('Set deleted.', 'success')
     return redirect(url_for('view_workout', workout_id=workout_id))
 
-# ----------------------- Start Workout Page Route -----------------------
+# ----------------------- History Edit Routes -----------------------
 
+@app.route('/history/edit/<int:workout_id>')
+@login_required
+def edit_history(workout_id):
+    workout = Workout.query.get_or_404(workout_id)
+    if workout.user_id != current_user.id:
+        flash("You don't have access to edit this workout.", 'error')
+        return redirect(url_for('history'))
+    
+    available_exercises = Exercise.query.order_by(Exercise.category, Exercise.name).all()
+    return render_template('edit_history.html', 
+                         workout=workout,
+                         available_exercises=available_exercises)
 
+@app.route('/history/edit/<int:workout_id>/save', methods=['POST'])
+@login_required
+def save_history_edit(workout_id):
+    workout = Workout.query.get_or_404(workout_id)
+    if workout.user_id != current_user.id:
+        flash("You don't have access to edit this workout.", 'error')
+        return redirect(url_for('history'))
+
+    # Get all sets data from the form
+    sets_dict = {}
+    for key in request.form:
+        if key.startswith('sets['):
+            # Extract set_id and field name from format "sets[1][weight]"
+            parts = key.split('[')
+            if len(parts) < 3:
+                continue
+            set_id = parts[1].rstrip(']')
+            field = parts[2].rstrip(']')
+            if set_id not in sets_dict:
+                sets_dict[set_id] = {}
+            sets_dict[set_id][field] = request.form.get(key)
+
+    # Update each set with the form data
+    for set_id, fields in sets_dict.items():
+        workout_set = WorkoutSet.query.get(set_id)
+        if not workout_set or workout_set.workout_id != workout.id:
+            continue
+
+        # Update weight if provided
+        if 'weight' in fields and fields['weight']:
+            try:
+                workout_set.weight = float(fields['weight'])
+            except ValueError:
+                flash(f"Invalid weight value for set {set_id}.", 'error')
+                return redirect(url_for('edit_history', workout_id=workout_id))
+
+        # Update reps if provided
+        if 'reps' in fields and fields['reps']:
+            try:
+                workout_set.reps = int(fields['reps'])
+            except ValueError:
+                flash(f"Invalid reps value for set {set_id}.", 'error')
+                return redirect(url_for('edit_history', workout_id=workout_id))
+
+        # Update RPE if provided
+        if 'rpe' in fields and fields['rpe']:
+            try:
+                rpe_value = float(fields['rpe'])
+                if not (1 <= rpe_value <= 10):
+                    raise ValueError
+                workout_set.rpe = rpe_value
+            except ValueError:
+                flash(f"Invalid RPE value for set {set_id}. Must be between 1 and 10.", 'error')
+                return redirect(url_for('edit_history', workout_id=workout_id))
+
+        # Update RIR if provided
+        if 'rir' in fields and fields['rir']:
+            try:
+                rir_value = int(fields['rir'])
+                if not (0 <= rir_value <= 9):
+                    raise ValueError
+                workout_set.rir = rir_value
+            except ValueError:
+                flash(f"Invalid RIR value for set {set_id}. Must be between 0 and 9.", 'error')
+                return redirect(url_for('edit_history', workout_id=workout_id))
+
+    try:
+        db.session.commit()
+        flash('Workout updated successfully!', 'success')
+        return redirect(url_for('history'))
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error saving workout: {str(e)}', 'error')
+        return redirect(url_for('edit_history', workout_id=workout_id))
+
+@app.route('/history/edit/<int:workout_id>/exercise/add', methods=['POST'])
+@login_required
+def add_exercise_to_history(workout_id):
+    workout = Workout.query.get_or_404(workout_id)
+    if workout.user_id != current_user.id:
+        flash("You don't have access to edit this workout.", 'error')
+        return redirect(url_for('history'))
+    
+    exercise_id = request.form.get('exercise_id')
+    sets = request.form.get('sets', 1)
+
+    if not exercise_id or not sets:
+        flash('Exercise and number of sets are required.', 'error')
+        return redirect(url_for('edit_history', workout_id=workout_id))
+
+    try:
+        exercise_id = int(exercise_id)
+        sets = int(sets)
+    except ValueError:
+        flash('Invalid input for exercise or sets.', 'error')
+        return redirect(url_for('edit_history', workout_id=workout_id))
+
+    for _ in range(sets):
+        new_set = WorkoutSet(
+            workout_id=workout_id,
+            exercise_id=exercise_id,
+            completed=True
+        )
+        db.session.add(new_set)
+    
+    db.session.commit()
+    flash('Exercise added to workout.', 'success')
+    return redirect(url_for('edit_history', workout_id=workout_id))
+
+@app.route('/history/edit/<int:workout_id>/exercise/<int:exercise_id>/delete', methods=['POST'])
+@login_required
+def delete_exercise_from_history(workout_id, exercise_id):
+    workout = Workout.query.get_or_404(workout_id)
+    if workout.user_id != current_user.id:
+        flash("You don't have access to edit this workout.", 'error')
+        return redirect(url_for('history'))
+
+    # Delete all sets for this exercise
+    WorkoutSet.query.filter_by(
+        workout_id=workout_id,
+        exercise_id=exercise_id
+    ).delete()
+
+    db.session.commit()
+    flash('Exercise removed from workout.', 'success')
+    return redirect(url_for('edit_history', workout_id=workout_id))
+
+@app.route('/history/edit/<int:workout_id>/set/<int:set_id>/delete', methods=['POST'])
+@login_required
+def delete_set_from_history(set_id, workout_id):
+    workout_set = WorkoutSet.query.get_or_404(set_id)
+    if workout_set.workout.user_id != current_user.id:
+        flash("You don't have access to edit this workout.", 'error')
+        return redirect(url_for('history'))
+
+    db.session.delete(workout_set)
+    db.session.commit()
+    flash('Set deleted.', 'success')
+    return redirect(url_for('edit_history', workout_id=workout_id))
+
+@app.route('/history/edit/<int:workout_id>/exercise/<int:exercise_id>/add_set', methods=['POST'])
+@login_required
+def add_set_to_history_exercise(workout_id, exercise_id):
+    workout = Workout.query.get_or_404(workout_id)
+    if workout.user_id != current_user.id:
+        flash("You don't have access to edit this workout.", 'error')
+        return redirect(url_for('history'))
+    
+    new_set = WorkoutSet(
+        workout_id=workout_id,
+        exercise_id=exercise_id,
+        completed=True
+    )
+    db.session.add(new_set)
+    db.session.commit()
+    
+    flash('Set added.', 'success')
+    return redirect(url_for('edit_history', workout_id=workout_id))
 
 # ----------------------- Database Initialization -----------------------
 
