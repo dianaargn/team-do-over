@@ -1,5 +1,3 @@
-<!-- view_workout.html -->
-
 {% extends "base.html" %}
 {% block content %}
 
@@ -69,6 +67,13 @@
     .finish-button:hover {
         background-color: #218838;
     }
+    .cancel-button {
+        background-color: #dc3545;
+        margin-right: 10px;
+    }
+    .cancel-button:hover {
+        background-color: #c82333;
+    }
     .workout-actions {
         margin-top: 20px;
         text-align: right;
@@ -112,8 +117,9 @@
     <h2>Exercises</h2>
 
     {% if workout.sets %}
-    <!-- Wrap all sets in a single form -->
-    <form action="{{ url_for('finish_workout', workout_id=workout.id) }}" method="post">
+    <form action="{{ url_for('finish_workout', workout_id=workout.id) }}" method="post" id="workoutForm">
+        <input type="hidden" name="action" id="formAction" value="finish">
+        
         {% for exercise_name, sets in workout.sets|groupby('exercise.name') %}
         <div class="exercise-container">
             <div class="exercise-header">
@@ -144,7 +150,6 @@
                     <div class="set-row">
                         <div class="set-number">Set {{ loop.index }}</div>
                         <div class="set-inputs" data-set-id="{{ s.id }}">
-                            <!-- Assign unique names for each input based on set ID -->
                             <div class="input-column">
                                 <label for="weight_{{ s.id }}">Weight (lbs/kg):</label>
                                 <input type="number" 
@@ -187,7 +192,9 @@
                             </div>
                         </div>
                         {% if not workout.completed %}
-                        <form action="{{ url_for('delete_set', set_id=s.id) }}" method="post" style="display: inline;" 
+                        <form action="{{ url_for('delete_set', set_id=s.id) }}" 
+                              method="post" 
+                              style="display: inline;"
                               onsubmit="return confirm('Are you sure you want to delete this set?');">
                             <button type="submit" class="button delete-button">Delete Set</button>
                         </form>
@@ -206,9 +213,9 @@
         {% endfor %}
 
         {% if not workout.completed %}
-        <!-- Finish Workout Button -->
         <div class="workout-actions">
-            <button type="submit" class="button finish-button">Finish Workout</button>
+            <button type="button" class="button cancel-button" onclick="confirmCancelWorkout()">Cancel Workout</button>
+            <button type="button" class="button finish-button" onclick="confirmFinishWorkout()">Finish Workout</button>
         </div>
         {% endif %}
     </form>
@@ -217,12 +224,10 @@
     {% endif %}
 
     {% if not workout.completed %}
-    <!-- Optional: Timer Script -->
+    <!-- Timer Script -->
     <script>
-        // Get the start time from the server-rendered template
+        // Original timer code remains unchanged
         const startTime = new Date("{{ workout.date.isoformat() }}").getTime();
-
-        // Create a timer element if it doesn't exist
         let timerElement = document.getElementById('timer');
         if (!timerElement) {
             timerElement = document.createElement('div');
@@ -235,18 +240,40 @@
         function updateTimer() {
             const now = new Date().getTime();
             const elapsed = now - startTime;
-
             const totalSeconds = Math.floor(elapsed / 1000);
             const hours = String(Math.floor(totalSeconds / 3600)).padStart(2, '0');
             const minutes = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, '0');
             const seconds = String(totalSeconds % 60).padStart(2, '0');
-
             timerElement.textContent = `Elapsed Time: ${hours}:${minutes}:${seconds}`;
         }
 
-        // Update the timer immediately and then every second
         updateTimer();
         setInterval(updateTimer, 1000);
+
+        // New functions for workout completion/cancellation
+        function confirmFinishWorkout() {
+            const form = document.getElementById('workoutForm');
+            const incompleteInputs = Array.from(document.querySelectorAll('input[type="number"]')).some(
+                input => input.value === '' && (input.name.includes('[weight]') || input.name.includes('[reps]'))
+            );
+            
+            if (incompleteInputs) {
+                if (confirm('Some sets are not filled out. Do you still want to finish the workout?')) {
+                    document.getElementById('formAction').value = 'finish';
+                    form.submit();
+                }
+            } else {
+                document.getElementById('formAction').value = 'finish';
+                form.submit();
+            }
+        }
+
+        function confirmCancelWorkout() {
+            if (confirm('Are you sure you want to cancel this workout? This action cannot be undone.')) {
+                document.getElementById('formAction').value = 'cancel';
+                document.getElementById('workoutForm').submit();
+            }
+        }
     </script>
     {% endif %}
 
