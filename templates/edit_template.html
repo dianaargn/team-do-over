@@ -138,7 +138,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>Edit Template: {{ template.name }}</h1>
+        <h1>Edit Workout: {{ template.name }}</h1>
 
         <div class="nav-links">
             <a href="{{ url_for('view_folder', folder_id=template.folder_id) }}" class="button">Back to Folder</a>
@@ -182,7 +182,7 @@
             <button type="submit">Add Exercise</button>
         </form>
 
-        <h2>Exercises in Template</h2>
+        <h2>Exercises in Workout</h2>
         <ul class="exercise-list">
             {% for ex in template.exercises %}
             <li class="exercise-item">
