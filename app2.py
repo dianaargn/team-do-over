@@ -1,4 +1,12 @@
-from flask import Flask, render_template, request, jsonify, redirect, url_for, flash
+from flask import (
+    Flask, 
+    render_template, 
+    request, jsonify, 
+    redirect, url_for, 
+    flash,  
+    get_flashed_messages, 
+    session
+)
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import (
     LoginManager,
@@ -110,6 +118,11 @@ class Exercise(db.Model):
 def load_user(user_id):
     return User.query.get(int(user_id))
 
+# ----------------------- Flash -----------------------
+def clear_flashes():
+    session.pop('_flashes', None)
+
+
 # ----------------------- Routes -----------------------
 
 @app.route('/')
@@ -122,18 +135,23 @@ def root():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    if request.method == 'POST':
+    if request.method == 'POST': 
         user = User.query.filter_by(username=request.form['username']).first()
         if user and user.check_password(request.form['password']):
             login_user(user)
             flash('Logged in successfully!', 'success')
             return redirect(url_for('profile'))
         flash('Invalid username or password.', 'error')
+    else:
+        # Clear flashes when accessing the login page via GET
+        clear_flashes()
     return render_template('login.html')
+
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
+        # Existing registration logic...
         existing_user = User.query.filter(
             (User.username == request.form['username']) | 
             (User.email == request.form['email'])
@@ -151,6 +169,9 @@ def register():
         db.session.commit()
         flash('Registration successful! Please log in.', 'success')
         return redirect(url_for('login'))
+    else:
+        # Clear flashes when accessing the register page via GET
+        clear_flashes()
     return render_template('register.html')
 
 # ----------------------- Dashboard Routes -----------------------
@@ -857,6 +878,13 @@ def init_db():
             for name, category, equipment in exercises_data:
                 exercise = Exercise(name=name, category=category, equipment=equipment)
                 db.session.add(exercise)
+
+            db.session.commit()
+
+if __name__ == '__main__':
+    init_db()
+    app.run(debug=True)
+
 
             db.session.commit()
 
