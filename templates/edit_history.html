@@ -1,0 +1,241 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+    .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+    .exercise-container {
+        margin: 20px 0;
+        padding: 15px;
+        border: 1px solid #dee2e6;
+        border-radius: 5px;
+    }
+    .exercise-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+    }
+    .set-container {
+        margin: 10px 0;
+        padding: 10px;
+        background-color: #f8f9fa;
+        border-radius: 5px;
+    }
+    .set-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .set-inputs {
+        display: flex;
+        gap: 15px;
+        flex-grow: 1;
+    }
+    .button {
+        padding: 5px 15px;
+        border: none;
+        border-radius: 3px;
+        cursor: pointer;
+        background-color: #007bff;
+        color: white;
+        text-decoration: none;
+    }
+    .delete-button {
+        background-color: #dc3545;
+    }
+    .delete-button:hover {
+        background-color: #c82333;
+    }
+    .add-exercise-form {
+        margin: 20px 0;
+        padding: 15px;
+        background-color: #f8f9fa;
+        border-radius: 5px;
+    }
+    .last-performance {
+        font-size: 0.9em;
+        color: #6c757d;
+        margin-bottom: 5px;
+    }
+    .finish-button {
+        background-color: #28a745;
+    }
+    .finish-button:hover {
+        background-color: #218838;
+    }
+    .save-button {
+        background-color: #28a745;
+    }
+    .save-button:hover {
+        background-color: #218838;
+    }
+    .workout-actions {
+        margin-top: 20px;
+        text-align: right;
+    }
+    .workout-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+    .workout-meta {
+        margin-bottom: 20px;
+    }
+</style>
+
+<div class="container">
+    <div class="workout-header">
+        <h1>Edit Workout</h1>
+        <a href="{{ url_for('history') }}" class="button">Back to History</a>
+    </div>
+
+    <div class="workout-meta">
+        <h2>{{ workout.name or "Workout" }}</h2>
+        <p><strong>Date:</strong> {{ workout.date.strftime('%B %d, %Y at %I:%M %p') }}</p>
+    </div>
+
+    <div class="add-exercise-form">
+        <h3>Add Exercise</h3>
+        <form action="{{ url_for('add_exercise_to_history', workout_id=workout.id) }}" method="post">
+            <label for="exercise_id">Exercise:</label>
+            <select name="exercise_id" id="exercise_id" required>
+                <option value="">Select Exercise</option>
+                {% for exercise in available_exercises %}
+                <option value="{{ exercise.id }}">{{ exercise.name }} ({{ exercise.category }})</option>
+                {% endfor %}
+            </select>
+            <label for="sets">Sets:</label>
+            <input type="number" name="sets" id="sets" value="1" min="1" max="10" required>
+            <button type="submit" class="button">Add Exercise</button>
+        </form>
+    </div>
+
+    <h2>Exercises</h2>
+
+    {% if workout.sets %}
+    <!-- Main form for saving changes -->
+    <div id="exerciseContainer">
+        {% for exercise_name, sets in workout.sets|groupby('exercise.name') %}
+        <div class="exercise-container">
+            <div class="exercise-header">
+                <h3>{{ exercise_name }}</h3>
+                <form action="{{ url_for('delete_exercise_from_history', workout_id=workout.id, exercise_id=sets[0].exercise_id) }}" 
+                      method="post" 
+                      style="display: inline;" 
+                      onsubmit="return confirm('Are you sure you want to remove this exercise and all its sets?');">
+                    <button type="submit" class="button delete-button">Delete Exercise</button>
+                </form>
+            </div>
+            
+            <div class="sets-container">
+                {% for s in sets %}
+                <div class="set-container">
+                    <div class="set-row">
+                        <div class="set-number">Set {{ loop.index }}</div>
+                        <div class="set-inputs">
+                            <div class="input-column">
+                                <label for="weight_{{ s.id }}">Weight (lbs/kg):</label>
+                                <input type="number" 
+                                       id="weight_{{ s.id }}"
+                                       step="0.5" 
+                                       min="0" 
+                                       value="{{ s.weight or '' }}"
+                                       onchange="updateFormData('{{ s.id }}', 'weight', this.value)">
+                            </div>
+                            <div class="input-column">
+                                <label for="reps_{{ s.id }}">Reps:</label>
+                                <input type="number" 
+                                       id="reps_{{ s.id }}"
+                                       min="0" 
+                                       value="{{ s.reps or '' }}"
+                                       onchange="updateFormData('{{ s.id }}', 'reps', this.value)">
+                            </div>
+                            <div class="input-column">
+                                <label for="rpe_{{ s.id }}">RPE (1-10):</label>
+                                <input type="number" 
+                                       id="rpe_{{ s.id }}"
+                                       step="0.5" 
+                                       min="1" 
+                                       max="10" 
+                                       value="{{ s.rpe or '' }}"
+                                       onchange="updateFormData('{{ s.id }}', 'rpe', this.value)">
+                            </div>
+                            <div class="input-column">
+                                <label for="rir_{{ s.id }}">RIR (0-9):</label>
+                                <input type="number" 
+                                       id="rir_{{ s.id }}"
+                                       min="0" 
+                                       max="9" 
+                                       value="{{ s.rir or '' }}"
+                                       onchange="updateFormData('{{ s.id }}', 'rir', this.value)">
+                            </div>
+                        </div>
+                        <form action="{{ url_for('delete_set_from_history', set_id=s.id, workout_id=workout.id) }}" 
+                              method="post" 
+                              style="display: inline;"
+                              onsubmit="return confirm('Are you sure you want to delete this set?');">
+                            <button type="submit" class="button delete-button">Delete Set</button>
+                        </form>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <form action="{{ url_for('add_set_to_history_exercise', workout_id=workout.id, exercise_id=sets[0].exercise_id) }}" 
+                  method="post" 
+                  class="add-set-form">
+                <button type="submit" class="button">Add Set</button>
+            </form>
+        </div>
+        {% endfor %}
+
+        <div class="workout-actions">
+            <button type="button" onclick="submitWorkout()" class="button save-button">Save Changes</button>
+        </div>
+    </div>
+
+    <!-- Hidden form for saving changes -->
+    <form id="saveForm" action="{{ url_for('save_history_edit', workout_id=workout.id) }}" method="post" style="display: none;">
+    </form>
+    {% else %}
+    <p>No sets found for this workout.</p>
+    {% endif %}
+</div>
+
+<script>
+let formData = {};
+
+function updateFormData(setId, field, value) {
+    if (!formData[setId]) {
+        formData[setId] = {};
+    }
+    formData[setId][field] = value;
+}
+
+function submitWorkout() {
+    const form = document.getElementById('saveForm');
+    form.innerHTML = ''; // Clear any existing inputs
+
+    // Also add current values from all inputs
+    document.querySelectorAll('.set-inputs input').forEach(input => {
+        const setId = input.id.split('_')[1];
+        const field = input.id.split('_')[0];
+        if (input.value) {
+            const hiddenInput = document.createElement('input');
+            hiddenInput.type = 'hidden';
+            hiddenInput.name = `sets[${setId}][${field}]`;
+            hiddenInput.value = input.value;
+            form.appendChild(hiddenInput);
+        }
+    });
+
+    form.submit();
+}
+</script>
+
+{% endblock %}
