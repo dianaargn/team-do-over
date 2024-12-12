@@ -75,6 +75,22 @@
             align-items: center;
             margin-bottom: 10px;
         }
+        .button-group {
+            display: flex;
+            gap: 8px;
+        }
+        .edit-button {
+            background: #6c757d;
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        .edit-button:hover {
+            background: #5a6268;
+        }
         .delete-button {
             background: #dc3545;
             border: none;
@@ -99,6 +115,25 @@
         .nav-links a, .nav-links form {
             display: inline-block;
         }
+        .edit-form {
+            display: none;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+        .update-button {
+            background: #28a745;
+        }
+        .update-button:hover {
+            background: #218838;
+        }
+        .cancel-button {
+            background: #6c757d;
+        }
+        .cancel-button:hover {
+            background: #5a6268;
+        }
     </style>
 </head>
 <body>
@@ -113,7 +148,7 @@
         </div>
 
         <h2>Add Exercise</h2>
-        <form method="POST" action="{{ url_for('add_template_exercise', template_id=template.id) }}">
+        <form method="POST" action="{{ url_for('add_template_exercise', template_id=template.id) }}" id="add-exercise-form">
             <label for="exercise_id">Exercise</label>
             <select name="exercise_id" id="exercise_id" required>
                 <option value="">Select Exercise</option>
@@ -153,9 +188,12 @@
             <li class="exercise-item">
                 <div class="exercise-header">
                     <strong>{{ ex.exercise.name }}</strong>
-                    <form method="POST" action="{{ url_for('delete_template_exercise', template_id=template.id, exercise_id=ex.id) }}" style="display:inline;">
-                        <button type="submit" class="delete-button">Remove</button>
-                    </form>
+                    <div class="button-group">
+                        <button class="edit-button" onclick="toggleEdit('{{ ex.id }}')">Edit</button>
+                        <form method="POST" action="{{ url_for('delete_template_exercise', template_id=template.id, exercise_id=ex.id) }}" style="display:inline;">
+                            <button type="submit" class="delete-button">Remove</button>
+                        </form>
+                    </div>
                 </div>
                 <div class="exercise-details">
                     Sets: {{ ex.sets }}<br>
@@ -165,9 +203,42 @@
                     {% if ex.rir %}RIR: {{ ex.rir }}<br>{% endif %}
                     {% if ex.notes %}Notes: {{ ex.notes }}{% endif %}
                 </div>
+                <div class="edit-form" id="edit-form-{{ ex.id }}">
+                    <form method="POST" action="{{ url_for('update_template_exercise', template_id=template.id, exercise_id=ex.id) }}">
+                        <label for="sets-{{ ex.id }}">Sets (required)</label>
+                        <input type="number" id="sets-{{ ex.id }}" name="sets" min="1" value="{{ ex.sets }}" required>
+
+                        <label for="reps-{{ ex.id }}">Reps (optional)</label>
+                        <input type="text" id="reps-{{ ex.id }}" name="reps" value="{{ ex.reps or '' }}" placeholder="e.g., '8-12' or blank">
+
+                        <label for="weight-{{ ex.id }}">Weight (optional)</label>
+                        <input type="number" id="weight-{{ ex.id }}" name="weight" min="0" step="0.5" value="{{ ex.weight or '' }}">
+
+                        <label for="rpe-{{ ex.id }}">RPE (1-10, optional)</label>
+                        <input type="number" id="rpe-{{ ex.id }}" name="rpe" min="1" max="10" step="0.5" value="{{ ex.rpe or '' }}">
+
+                        <label for="rir-{{ ex.id }}">RIR (optional)</label>
+                        <input type="number" id="rir-{{ ex.id }}" name="rir" min="0" max="10" value="{{ ex.rir or '' }}">
+
+                        <label for="notes-{{ ex.id }}">Notes (optional)</label>
+                        <input type="text" id="notes-{{ ex.id }}" name="notes" value="{{ ex.notes or '' }}">
+
+                        <div class="button-group" style="margin-top: 15px;">
+                            <button type="submit" class="update-button">Update Exercise</button>
+                            <button type="button" class="cancel-button" onclick="toggleEdit('{{ ex.id }}')">Cancel</button>
+                        </div>
+                    </form>
+                </div>
             </li>
             {% endfor %}
         </ul>
     </div>
+
+    <script>
+        function toggleEdit(exerciseId) {
+            const editForm = document.getElementById(`edit-form-${exerciseId}`);
+            editForm.style.display = editForm.style.display === 'none' ? 'block' : 'none';
+        }
+    </script>
 </body>
 </html>
