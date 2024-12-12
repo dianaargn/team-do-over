@@ -10,13 +10,18 @@
     {% if workouts %}
         {% for w in workouts %}
             <div class="workout-entry">
-                <h2>{{ w.name or (w.template.name if w.template else 'Workout') }}</h2>
-                <small>{{ w.date.strftime('%B %d, %Y at %I:%M %p') }}</small><br>
-                {% if w.completed %}
-                    <small class="status completed">Completed</small>
-                {% else %}
-                    <small class="status in-progress">In Progress</small>
-                {% endif %}
+                <div style="display: flex; justify-content: space-between; align-items: start;">
+                    <div>
+                        <h2>{{ w.name or (w.template.name if w.template else 'Workout') }}</h2>
+                        <small>{{ w.date.strftime('%B %d, %Y at %I:%M %p') }}</small><br>
+                        {% if w.completed %}
+                            <small class="status completed">Completed</small>
+                        {% else %}
+                            <small class="status in-progress">In Progress</small>
+                        {% endif %}
+                    </div>
+                    <a href="{{ url_for('edit_history', workout_id=w.id) }}" class="button" style="margin-left: 10px;">Edit</a>
+                </div>
 
                 {% if w.sets %}
                     <h3>Sets Performed:</h3>
