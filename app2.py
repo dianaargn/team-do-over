@@ -244,6 +244,24 @@ def logout():
 
 # ----------------------- Folder Routes -----------------------
 
+@app.route('/folder/<int:folder_id>/delete', methods=['POST'])
+@login_required
+def delete_folder(folder_id):
+    folder = Folder.query.get_or_404(folder_id)
+    if folder.user_id != current_user.id:
+        flash("You don't have permission to delete this folder.", 'error')
+        return redirect(url_for('dashboard'))
+    
+    # Delete all associated templates and their exercises
+    for template in folder.templates:
+        TemplateExercise.query.filter_by(template_id=template.id).delete()
+    WorkoutTemplate.query.filter_by(folder_id=folder_id).delete()
+    
+    db.session.delete(folder)
+    db.session.commit()
+    flash('Folder and all its templates deleted successfully.', 'success')
+    return redirect(url_for('dashboard'))
+
 @app.route('/folder/<int:folder_id>')
 @login_required
 def view_folder(folder_id):
@@ -270,6 +288,22 @@ def create_folder():
     return redirect(url_for('dashboard'))
 
 # ----------------------- Workout Template Routes -----------------------
+
+@app.route('/template/<int:template_id>/delete', methods=['POST'])
+@login_required
+def delete_template(template_id):
+    template = WorkoutTemplate.query.get_or_404(template_id)
+    if template.folder.user_id != current_user.id:
+        flash("You don't have permission to delete this template.", 'error')
+        return redirect(url_for('dashboard'))
+    
+    # Delete all associated template exercises first
+    TemplateExercise.query.filter_by(template_id=template_id).delete()
+    
+    db.session.delete(template)
+    db.session.commit()
+    flash('Template deleted successfully.', 'success')
+    return redirect(url_for('dashboard'))
 
 @app.route('/template/create/<int:folder_id>', methods=['GET', 'POST'])
 @login_required
@@ -878,13 +912,6 @@ def init_db():
             for name, category, equipment in exercises_data:
                 exercise = Exercise(name=name, category=category, equipment=equipment)
                 db.session.add(exercise)
-
-            db.session.commit()
-
-if __name__ == '__main__':
-    init_db()
-    app.run(debug=True)
-
 
             db.session.commit()
 
