@@ -289,6 +289,34 @@ def create_folder():
 
 # ----------------------- Workout Template Routes -----------------------
 
+@app.route('/template/exercise/<int:template_id>/<int:exercise_id>/update', methods=['POST'])
+@login_required
+def update_template_exercise(template_id, exercise_id):
+    template = WorkoutTemplate.query.get_or_404(template_id)
+    exercise = TemplateExercise.query.get_or_404(exercise_id)
+    
+    if template.folder.user_id != current_user.id:
+        flash("You don't have permission to edit this template.", 'error')
+        return redirect(url_for('dashboard'))
+    
+    exercise.sets = int(request.form.get('sets'))
+    exercise.reps = request.form.get('reps') or None
+    
+    weight = request.form.get('weight')
+    exercise.weight = float(weight) if weight else None
+    
+    rpe = request.form.get('rpe')
+    exercise.rpe = float(rpe) if rpe else None
+    
+    rir = request.form.get('rir')
+    exercise.rir = int(rir) if rir else None
+    
+    exercise.notes = request.form.get('notes') or None
+    
+    db.session.commit()
+    flash('Exercise updated successfully.', 'success')
+    return redirect(url_for('edit_template', template_id=template_id))
+
 @app.route('/template/<int:template_id>/delete', methods=['POST'])
 @login_required
 def delete_template(template_id):
