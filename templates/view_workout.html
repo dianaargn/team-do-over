@@ -252,21 +252,28 @@
 
         // New functions for workout completion/cancellation
         function confirmFinishWorkout() {
-            const form = document.getElementById('workoutForm');
-            const incompleteInputs = Array.from(document.querySelectorAll('input[type="number"]')).some(
-                input => input.value === '' && (input.name.includes('[weight]') || input.name.includes('[reps]'))
-            );
+    const form = document.getElementById('workoutForm');
+    const incompleteInputs = Array.from(document.querySelectorAll('input[type="number"]')).some(
+        input => input.value === '' && (input.name.includes('[weight]') || input.name.includes('[reps]'))
+    );
+    
+    if (incompleteInputs) {
+        if (confirm('Some sets are not filled out. Do you still want to finish the workout?')) {
+            // Add hidden input for confirmation
+            const hiddenInput = document.createElement('input');
+            hiddenInput.type = 'hidden';
+            hiddenInput.name = 'confirm_incomplete';
+            hiddenInput.value = 'true';
+            form.appendChild(hiddenInput);
             
-            if (incompleteInputs) {
-                if (confirm('Some sets are not filled out. Do you still want to finish the workout?')) {
-                    document.getElementById('formAction').value = 'finish';
-                    form.submit();
-                }
-            } else {
-                document.getElementById('formAction').value = 'finish';
-                form.submit();
-            }
+            document.getElementById('formAction').value = 'finish';
+            form.submit();
         }
+    } else {
+        document.getElementById('formAction').value = 'finish';
+        form.submit();
+    }
+}
 
         function confirmCancelWorkout() {
             if (confirm('Are you sure you want to cancel this workout? This action cannot be undone.')) {
