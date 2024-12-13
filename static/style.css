@@ -27,7 +27,7 @@ body {
 .container {
     max-width: 600px;
     margin: 0 auto;
-    background-color: #fff;
+    background-color: var(--background-color);
     border-radius: 12px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     padding: 20px;
@@ -37,13 +37,13 @@ body {
 /* Headers */
 h1 {
     font-size: 24px;
-    color: #2b2b52;
+    color: var(--font-color);
     margin-bottom: 20px;
 }
 
 h2 {
     font-size: 20px;
-    color: #333;
+    color: var(--font-color);
     margin-bottom: 10px;
 }
 
@@ -88,7 +88,7 @@ li:last-child {
 
 /* Links */
 a {
-    color: #007AFF;
+    color: var(--primary-color);
     text-decoration: none;
     font-weight: 500;
 }
@@ -102,7 +102,7 @@ input, textarea {
     width: 100%;
     padding: 12px;
     margin-bottom: 10px;
-    border: 1px solid #ddd;
+    border: 1px solid var(--border-color);
     border-radius: 8px;
     font-size: 16px;
 }
@@ -115,7 +115,7 @@ input, textarea {
 .add-folder-form input {
     flex: 1;
     padding: 12px;
-    border: 1px solid #ddd;
+    border: 1px solid var(--border-color);
     border-radius: 8px;
     font-size: 16px;
 }
@@ -148,6 +148,14 @@ input, textarea {
     color: #333;
     font-weight: bold;
 }
+.nav-links {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+.nav-links a, .nav-links form {
+    display: inline-block;
+}
 /* Logout */
 .logout {
     text-align: right;
@@ -156,7 +164,7 @@ input, textarea {
 
 .logout a {
     display: inline-block;
-    background-color: #007AFF;
+    background-color: var(--primary-color);
     color: white;
     border: none;
     padding: 12px 24px;
@@ -166,7 +174,7 @@ input, textarea {
     transition: background-color 0.3s ease, transform 0.2s ease;
 }
 .logout a:hover {
-    background-color: #0056b3;
+    background-color: var(--primary-color);
 }
 /* Folder and Workout Lists */
 
@@ -185,7 +193,7 @@ input, textarea {
 
 .folder-link {
     display: block;
-    color: #007AFF;
+    color: var(--primary-color);
     text-decoration: none;
     font-weight: 500;
 }
@@ -290,6 +298,18 @@ input, select {
 }
 .save-button:hover {
     background-color: #218838;
+}
+.update-button {
+    background: #28a745;
+}
+.update-button:hover {
+    background: #218838;
+}
+.cancel-button {
+    background: #6c757d;
+}
+.cancel-button:hover {
+    background: #5a6268;
 }
 /* template styling */
 .edit-button {
