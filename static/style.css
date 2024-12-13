@@ -399,3 +399,68 @@ input, select {
     gap: 15px;
     flex-grow: 1;
 }
+/* Responsiveness */
+/* Base styles for larger screens (default) */
+
+/* Medium screens (tablets and small laptops) */
+@media (max-width: 1024px) {
+    .container {
+        max-width: 90%;
+        padding: 15px;
+    }
+
+    .bottom-nav {
+        padding: 5px 0;
+    }
+
+    button, a.button {
+        font-size: 14px;
+        padding: 10px 20px;
+    }
+}
+
+/* Small screens (phones) */
+@media (max-width: 768px) {
+    body {
+        padding: 10px;
+    }
+
+    .bottom-nav {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .bottom-nav a {
+        margin: 5px 0;
+    }
+
+    .container {
+        padding: 10px;
+    }
+
+    .exercise-item, .folder-item {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .exercise-header, .template-actions {
+        flex-direction: column;
+        gap: 5px;
+    }
+}
+
+/* Extra-small screens (very narrow phones) */
+@media (max-width: 480px) {
+    h1 {
+        font-size: 20px;
+    }
+
+    h2 {
+        font-size: 18px;
+    }
+
+    button, a.button {
+        font-size: 12px;
+        padding: 8px 16px;
+    }
+}
