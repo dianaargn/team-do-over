@@ -1023,7 +1023,7 @@ def init_db():
                 ('Trap Bar Deadlift', 'Back', 'Trap Bar'),
                 ('Cable Seated Row', 'Back', 'Cable'),
                 ('Straight Arm Lat Pulldown', 'Back', 'Cable'),
-                ('Machine Row', 'Back', 'Machine')
+                ('Machine Row', 'Back', 'Machine'),
 
                 # Biceps
                 ('Barbell Curl', 'Biceps', 'Barbell'),
@@ -1065,7 +1065,7 @@ def init_db():
 
                 # Glutes
                 ('Squat', 'Glutes', 'Barbell'),
-                ('Lunges', 'Glutes', 'Barbell/Dumbbell')
+                ('Lunges', 'Glutes', 'Barbell/Dumbbell'),
                 ('Hip Thrust', 'Glutes', 'Barbell'),
                 ('Romanian Deadlift', 'Glutes', 'Barbell'),
                 ('Bulgarian Split Squat', 'Glutes', 'Dumbbell'),
@@ -1076,7 +1076,7 @@ def init_db():
                 # Abs
                 ('Cable Crunch', 'Abs', 'Cable'),
                 ('Machine Crunch', 'Abs', 'Machine'),
-                ('Decline Sit Ups', 'Abs', 'Bodyweight')
+                ('Decline Sit Ups', 'Abs', 'Bodyweight'),
                 ('Hanging Leg Raise', 'Abs', 'Bodyweight'),
                 ('High to Low Wood Chop', 'Abs', 'Cable'),
                 ('Crunch', 'Abs', 'Bodyweight'),
