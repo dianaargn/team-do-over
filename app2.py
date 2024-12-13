@@ -601,7 +601,7 @@ def view_workout(workout_id):
     for s in workout.sets:
         if s.exercise_id not in last_performances:
             # Get the last workout that included this exercise
-            previous_set = WorkoutSet.query.join(Workout).filter(
+            previous_workout = Workout.query.join(WorkoutSet).filter(
                 Workout.user_id == current_user.id,
                 Workout.id != workout.id,
                 WorkoutSet.exercise_id == s.exercise_id,
@@ -610,13 +610,25 @@ def view_workout(workout_id):
                 WorkoutSet.reps.isnot(None)
             ).order_by(Workout.date.desc()).first()
 
-            if previous_set:
-                last_performances[s.exercise_id] = {
-                    'weight': previous_set.weight,
-                    'reps': previous_set.reps,
-                    'rpe': previous_set.rpe,
-                    'date': previous_set.workout.date
-                }
+            if previous_workout:
+                # Get all sets from that workout for this exercise
+                previous_sets = WorkoutSet.query.filter(
+                    WorkoutSet.workout_id == previous_workout.id,
+                    WorkoutSet.exercise_id == s.exercise_id,
+                    WorkoutSet.completed == True,
+                    WorkoutSet.weight.isnot(None),
+                    WorkoutSet.reps.isnot(None)
+                ).order_by(WorkoutSet.id).all()
+
+                # Store each set's data in a dictionary
+                last_performances[s.exercise_id] = {}
+                for idx, prev_set in enumerate(previous_sets):
+                    last_performances[s.exercise_id][idx] = {
+                        'weight': prev_set.weight,
+                        'reps': prev_set.reps,
+                        'rpe': prev_set.rpe,
+                        'date': previous_workout.date
+                    }
 
     return render_template('view_workout.html', 
                            workout=workout, 
@@ -968,152 +980,130 @@ def init_db():
         if Exercise.query.count() == 0:
             exercises_data = [
                 # Chest
+                ('Bench Press', 'Chest', 'Barbell'),
+                ('Incline Dumbbell Press', 'Chest', 'Dumbbell'),
+                ('Dips', 'Chest', 'Bodyweight'),
+                ('Standing Cable Chest Fly', 'Chest', 'Cable'),
                 ('Assisted Dip', 'Chest', 'Assisted'),
                 ('Band-Assisted Bench Press', 'Chest', 'Band'),
-                ('Bar Dip', 'Chest', 'Bodyweight'),
-                ('Bench Press', 'Chest', 'Barbell'),
                 ('Cable Crossover', 'Chest', 'Cable'),
-                ('Chest Fly (Machine)', 'Chest', 'Machine'),
-                ('Dumbbell Bench Press', 'Chest', 'Dumbbell'),
-                ('Incline Bench Press', 'Chest', 'Barbell'),
-                ('Incline Dumbbell Press', 'Chest', 'Dumbbell'),
+                ('Close-Grip Bench Press', 'Chest', 'Barbell'),
+                ('Decline Bench Press', 'Chest', 'Barbell'),
+                ('Dumbbell Chest Fly', 'Chest', 'Dumbbell'),
                 ('Push-Up', 'Chest', 'Bodyweight'),
-                ('Single-Arm Dumbbell Press', 'Chest', 'Dumbbell'),
-                ('Wide-Grip Push-Up', 'Chest', 'Bodyweight'),
+                ('Ring Dip', 'Chest', 'Rings'),
+                ('Smith Machine Bench Press', 'Chest', 'Smith Machine'),
+                ('Incline Push-Up', 'Chest', 'Bodyweight'),
+                ('Dumbbell Pullover', 'Chest', 'Dumbbell'),
+
+                # Shoulders
+                ('Overhead Press', 'Shoulders', 'Barbell'),
+                ('Seated Dumbbell Shoulder Press', 'Shoulders', 'Dumbbell'),
+                ('Dumbbell Lateral Raise', 'Shoulders', 'Dumbbell'),
+                ('Reverse Dumbbell Fly', 'Shoulders', 'Dumbbell'),
+                ('Reverse Machine Fly', 'Shoulders', 'Machine'),
+                ('Arnold Press', 'Shoulders', 'Dumbbell'),
+                ('Band Pull-Apart', 'Shoulders', 'Band'),
+                ('Cable Lateral Raise', 'Shoulders', 'Cable'),
+                ('Face Pull', 'Shoulders', 'Cable'),
+                ('Landmine Press', 'Shoulders', 'Landmine'),
+                ('Machine Shoulder Press', 'Shoulders', 'Machine'),
 
                 # Back
-                ('Barbell Row', 'Back', 'Barbell'),
-                ('Bent Over Row', 'Back', 'Barbell'),
-                ('Chin-Up', 'Back', 'Bodyweight'),
-                ('Clean', 'Back', 'Barbell'),
-                ('Clean and Jerk', 'Back', 'Barbell'),
                 ('Deadlift', 'Back', 'Barbell'),
-                ('Deficit Deadlift', 'Back', 'Barbell'),
-                ('Dumbbell Deadlift', 'Back', 'Dumbbell'),
-                ('Dumbbell Row', 'Back', 'Dumbbell'),
-                ('Dumbbell Shrug', 'Back', 'Dumbbell'),
-                ('Floor Back Extension', 'Back', 'Bodyweight'),
-                ('Good Morning', 'Back', 'Barbell'),
-                ('Gorilla Row', 'Back', 'Dumbbell/Kettlebell'),
-                ('Hang Clean', 'Back', 'Barbell'),
-                ('Hang Power Clean', 'Back', 'Barbell'),
-                ('Hang Power Snatch', 'Back', 'Barbell'),
-                ('Hang Snatch', 'Back', 'Barbell'),
-                ('Inverted Row', 'Back', 'Bodyweight'),
-                ('Inverted Row with Underhand Grip', 'Back', 'Bodyweight'),
-                ('Jefferson Curl', 'Back', 'Barbell'),
-                ('Jumping Muscle-Up', 'Back', 'Bodyweight'),
-                ('Kettlebell Swing', 'Back', 'Kettlebell'),
-                ('Lat Pulldown With Pronated Grip', 'Back', 'Cable'),
-                ('Lat Pulldown With Supinated Grip', 'Back', 'Cable'),
-                ('Muscle-Up (Bar)', 'Back', 'Bar'),
-                ('Muscle-Up (Rings)', 'Back', 'Rings'),
-                ('One-Handed Cable Row', 'Back', 'Cable'),
-                ('One-Handed Lat Pulldown', 'Back', 'Cable'),
-                ('Pause Deadlift', 'Back', 'Barbell'),
-                ('Pendlay Row', 'Back', 'Barbell'),
-                ('Power Clean', 'Back', 'Barbell'),
-                ('Power Snatch', 'Back', 'Barbell'),
+                ('Lat Pulldown', 'Back', 'Cable'),
                 ('Pull-Up', 'Back', 'Bodyweight'),
-                ('Pull-Up With a Neutral Grip', 'Back', 'Bodyweight'),
-                ('Rack Pull', 'Back', 'Barbell'),
-                ('Ring Pull-Up', 'Back', 'Rings'),
-                ('Ring Row', 'Back', 'Rings'),
-                ('Scap Pull-Up', 'Back', 'Bodyweight'),
-                ('Seal Row', 'Back', 'Bench/Barbell'),
-                ('Seated Machine Row', 'Back', 'Machine'),
-                ('Single Leg Deadlift with Kettlebell', 'Back', 'Kettlebell'),
-                ('Smith Machine One-Handed Row', 'Back', 'Smith Machine'),
-                ('Snatch', 'Back', 'Barbell'),
-                ('Snatch Grip Deadlift', 'Back', 'Barbell'),
-                ('Stiff-Legged Deadlift', 'Back', 'Barbell'),
-                ('Straight Arm Lat Pulldown', 'Back', 'Cable'),
-                ('Sumo Deadlift', 'Back', 'Barbell'),
+                ('Barbell Row', 'Back', 'Barbell'),
+                ('Dumbbell Row', 'Back', 'Dumbbell'),
+                ('Seal Row', 'Back', 'Barbell'),
                 ('T-Bar Row', 'Back', 'T-Bar'),
-                ('Trap Bar Deadlift With High Handles', 'Back', 'Trap Bar'),
-                ('Trap Bar Deadlift With Low Handles', 'Back', 'Trap Bar'),
+                ('Meadows row', 'Back', 'T-Bar'),
+                ('Back Extensions', 'Back', 'Barbell/Dumbbell/Plate'),
+                ('Inverted Row', 'Back', 'Bodyweight'),
+                ('Trap Bar Deadlift', 'Back', 'Trap Bar'),
+                ('Cable Seated Row', 'Back', 'Cable'),
+                ('Straight Arm Lat Pulldown', 'Back', 'Cable'),
+                ('Machine Row', 'Back', 'Machine')
+
+                # Biceps
+                ('Barbell Curl', 'Biceps', 'Barbell'),
+                ('Dumbbell Curl', 'Biceps', 'Dumbbell'),
+                ('Hammer Curl', 'Biceps', 'Dumbbell'),
+                ('Incline Dumbbell Curl', 'Biceps', 'Dumbbell'),
+                ('Concentration Curl', 'Biceps', 'Dumbbell'),
+                ('Cable Curl', 'Biceps', 'Cable'),
+                ('Spider Curl', 'Biceps', 'Dumbbell'),
+                ('Preacher Curl', 'Biceps', 'Barbell/Dumbbell'),
+
+                # Triceps
+                ('Barbell Lying Triceps Extension', 'Triceps', 'Barbell'),
+                ('Overhead Cable Triceps Extension', 'Triceps', 'Cable'),
+                ('Tricep Pushdown', 'Triceps', 'Cable'),
+                ('Dips', 'Triceps', 'Bodyweight'),
+                ('Close-Grip Bench Press', 'Triceps', 'Barbell'),
+                ('Dumbbell Skull Crusher', 'Triceps', 'Dumbbell'),
+                ('Barbell Skull Crusher', 'Triceps', 'Barbell'),
+                ('Tricep Kickback', 'Triceps', 'Dumbbell'),
+                ('Bench Dip', 'Triceps', 'Bodyweight'),
+
+                # Quadriceps
+                ('Squat', 'Quadriceps', 'Barbell'),
+                ('Hack Squats', 'Quadriceps', 'Machine'),
+                ('Leg Extension', 'Quadriceps', 'Machine'),
+                ('Bulgarian Split Squat', 'Quadriceps', 'Dumbbell'),
+                ('Front Squat', 'Quadriceps', 'Barbell'),
+                ('Goblet Squat', 'Quadriceps', 'Dumbbell'),
+                ('Smith Machine Squat', 'Quadriceps', 'Smith Machine'),
+
+                # Hamstrings
+                ('Seated Leg Curl', 'Hamstrings', 'Machine'),
+                ('Lying Leg Curl', 'Hamstrings', 'Machine'),
+                ('Romanian Deadlift', 'Hamstrings', 'Barbell'),
+                ('Nordic Hamstring Curl', 'Hamstrings', 'Bodyweight'),
+                ('Good Morning', 'Hamstrings', 'Barbell'),
+                ('Stiff Leg Deadlift', 'Hamstrings', 'Barbell'),
 
                 # Glutes
-                ('Banded Side Kicks', 'Glutes', 'Band'),
-                ('Cable Pull Through', 'Glutes', 'Cable'),
-                ('Clamshells', 'Glutes', 'Bodyweight/Band'),
-                ('Cossack Squat', 'Glutes', 'Bodyweight/Kettlebell'),
-                ('Death March with Dumbbells', 'Glutes', 'Dumbbell'),
-                ('Donkey Kicks', 'Glutes', 'Bodyweight'),
-                ('Dumbbell Romanian Deadlift', 'Glutes', 'Dumbbell'),
-                ('Dumbbell Frog Pumps', 'Glutes', 'Dumbbell'),
-                ('Fire Hydrants', 'Glutes', 'Bodyweight'),
-                ('Frog Pumps', 'Glutes', 'Bodyweight'),
-                ('Glute Bridge', 'Glutes', 'Bodyweight/Barbell'),
-                ('Hip Abduction Against Band', 'Glutes', 'Band'),
-                ('Hip Abduction Machine', 'Glutes', 'Machine'),
+                ('Squat', 'Glutes', 'Barbell'),
+                ('Lunges', 'Glutes', 'Barbell/Dumbbell')
                 ('Hip Thrust', 'Glutes', 'Barbell'),
-                ('Hip Thrust Machine', 'Glutes', 'Machine'),
-                ('Hip Thrust With Band Around Knees', 'Glutes', 'Band/Barbell'),
-                ('Lateral Walk With Band', 'Glutes', 'Band'),
-                ('Machine Glute Kickbacks', 'Glutes', 'Machine'),
-                ('One-Legged Glute Bridge', 'Glutes', 'Bodyweight'),
-                ('One-Legged Hip Thrust', 'Glutes', 'Bodyweight'),
-                ('Reverse Hyperextension', 'Glutes', 'Machine'),
                 ('Romanian Deadlift', 'Glutes', 'Barbell'),
-                ('Single Leg Romanian Deadlift', 'Glutes', 'Dumbbell/Kettlebell'),
-                ('Standing Glute Kickback in Machine', 'Glutes', 'Machine'),
-                ('Step Up', 'Glutes', 'Bodyweight/Dumbbell'),
+                ('Bulgarian Split Squat', 'Glutes', 'Dumbbell'),
+                ('Glute Bridge', 'Glutes', 'Bodyweight'),
+                ('Cable Pull Through', 'Glutes', 'Cable'),
+                ('Reverse Hyperextension', 'Glutes', 'Machine'),
 
                 # Abs
-                ('Ball Slams', 'Core', 'Medicine Ball'),
-                ('Cable Crunch', 'Core', 'Cable'),
-                ('Crunch', 'Core', 'Bodyweight'),
-                ('Dead Bug', 'Core', 'Bodyweight'),
-                ('Dragon Flag', 'Core', 'Bodyweight'),
-                ('Hanging Knee Raise', 'Core', 'Bodyweight'),
-                ('Hanging Leg Raise', 'Core', 'Bodyweight'),
-                ('Hanging Sit-Up', 'Core', 'Bodyweight'),
-                ('Hanging Windshield Wiper', 'Core', 'Bodyweight'),
-                ('High to Low Wood Chop with Band', 'Core', 'Band'),
-                ('Horizontal Wood Chop with Band', 'Core', 'Band'),
-                ('Jackknife Sit-Up', 'Core', 'Bodyweight'),
-                ('Kneeling Ab Wheel Roll-Out', 'Core', 'Ab Wheel'),
-                ('Kneeling Plank', 'Core', 'Bodyweight'),
-                ('Kneeling Side Plank', 'Core', 'Bodyweight'),
-                ('Lying Leg Raise', 'Core', 'Bodyweight'),
-                ('Lying Windshield Wiper', 'Core', 'Bodyweight'),
-                ('Lying Windshield Wiper with Bent Knees', 'Core', 'Bodyweight'),
-                ('Machine Crunch', 'Core', 'Machine'),
-                ('Mountain Climbers', 'Core', 'Bodyweight'),
-                ('Oblique Crunch', 'Core', 'Bodyweight'),
-                ('Oblique Sit-Up', 'Core', 'Bodyweight'),
-                ('Plank', 'Core', 'Bodyweight'),
-                ('Plank with Leg Lifts', 'Core', 'Bodyweight'),
-                ('Russian Twist', 'Core', 'Bodyweight'),
-                ('Side Plank', 'Core', 'Bodyweight'),
-                ('Sit-Up', 'Core', 'Bodyweight'),
+                ('Cable Crunch', 'Abs', 'Cable'),
+                ('Machine Crunch', 'Abs', 'Machine'),
+                ('Decline Sit Ups', 'Abs', 'Bodyweight')
+                ('Hanging Leg Raise', 'Abs', 'Bodyweight'),
+                ('High to Low Wood Chop', 'Abs', 'Cable'),
+                ('Crunch', 'Abs', 'Bodyweight'),
+                ('Sit Ups', 'Abs', 'Bodyweight'),
+                ('Leg Raise', 'Abs', 'Bodyweight'),
+                ('Plank', 'Abs', 'Bodyweight'),
+                ('Side Plank', 'Abs', 'Bodyweight'),
+                ('Russian Twist', 'Abs', 'Bodyweight'),
+                ('Mountain Climbers', 'Abs', 'Bodyweight'),
 
                 # Calves
-                ('Barbell Standing Calf Raise', 'Calves', 'Barbell'),
-                ('Donkey Calf Raise', 'Calves', 'Bodyweight/Machine'),
-                ('Eccentric Heel Drop', 'Calves', 'Bodyweight'),
-                ('Heel Raise', 'Calves', 'Bodyweight'),
+                ('Standing Calf Raise', 'Calves', 'Machine'),
                 ('Seated Calf Raise', 'Calves', 'Machine'),
-                ('Standing Calf Raise', 'Calves', 'Bodyweight/Machine'),
+                ('Donkey Calf Raise', 'Calves', 'Machine'),
+                ('Barbell Calf Raise', 'Calves', 'Barbell'),
 
                 # Forearm Flexors & Grip
-                ('Barbell Wrist Curl', 'Forearms', 'Barbell'),
-                ('Barbell Wrist Curl Behind the Back', 'Forearms', 'Barbell'),
-                ('Bar Hang', 'Forearms', 'Bodyweight'),
-                ('Dumbbell Wrist Curl', 'Forearms', 'Dumbbell'),
                 ('Farmers Walk', 'Forearms', 'Dumbbell/Kettlebell'),
-                ('Fat Bar Deadlift', 'Forearms', 'Fat Bar'),
+                ('Bar Hang', 'Forearms', 'Bodyweight'),
                 ('Gripper', 'Forearms', 'Hand Gripper'),
-                ('One-Handed Bar Hang', 'Forearms', 'Bodyweight'),
-                ('Plate Pinch', 'Forearms', 'Plates'),
-                ('Plate Wrist Curl', 'Forearms', 'Plates'),
-                ('Towel Pull-Up', 'Forearms', 'Bodyweight/Towel'),
+                ('Plate Pinch', 'Forearms', 'Plate'),
                 ('Wrist Roller', 'Forearms', 'Wrist Roller'),
+                ('Wrist Curls', 'Forearms', 'Barbell/Dumbbell'),
 
                 # Forearm Extensors
                 ('Barbell Wrist Extension', 'Forearms', 'Barbell'),
-                ('Dumbbell Wrist Extension', 'Forearms', 'Dumbbell')
+                ('Dumbbell Wrist Extension', 'Forearms', 'Dumbbell'),
             ]
             default_user = User.query.filter_by(username='default_user').first()
             if not default_user:
