@@ -8,6 +8,7 @@ pip install Flask
 pip install flask_sqlalchemy
 pip install flask_login
 pip install werkzeug
+pip install waitress
 
 --Open instructions--
 python app2.py
