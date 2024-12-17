@@ -45,6 +45,7 @@ body {
     max-width: 800px;
     margin: 0 auto;
     padding: 20px;
+    
 }
 
 .resume-workout-container {
@@ -92,9 +93,9 @@ button, a.button {
     border-radius: 8px;
     font-size: 16px;
     cursor:pointer;
+    align-items: center;
     text-decoration: none;
     display: inline-block;
-    margin-top: 10px;
     transition: background-color 0.3s ease, transform 0.2s ease;
 }
 
@@ -134,6 +135,7 @@ button:active, a.button:active {
     text-align: right;
 }
 
+
 /* ========== Links ========== */
 a {
     color: var(--primary-color);
@@ -156,9 +158,12 @@ input, select, textarea {
 }
 
 .folder-form, .template-form {
-    display:flexbox;
-    gap: 10px;
-    margin-top: 20px;
+    display:flex;
+    gap: 20px;
+    white-space: nowrap;
+    justify-content: space-between;
+    align-items: end;
+    padding: 10px;
 }
 
 .folder-form input {
@@ -170,6 +175,7 @@ input, select, textarea {
     background-color: #f8f9fa;
     border-radius: 5px;
 }
+
 /* ========== Lists ========== */
 ul {
     list-style: none;
@@ -234,6 +240,13 @@ li:last-child {
 
 .folder-link:hover, .template-link:hover {
     text-decoration: underline;
+}
+
+.folder-header {
+    display:flex;
+    align-items: center;
+    padding: 10px;
+    justify-content: space-between;
 }
 /* ========= During a Workout ========== */
 
