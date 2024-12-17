@@ -1,30 +1,6 @@
 {% extends "base.html" %}
 {% block content %}
-
 <style>
-    .container {
-        max-width: 1200px;
-        margin: 0 auto;
-        padding: 20px;
-    }
-    .exercise-container {
-        margin: 20px 0;
-        padding: 15px;
-        border: 1px solid #dee2e6;
-        border-radius: 5px;
-    }
-    .exercise-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 15px;
-    }
-    .set-container {
-        margin: 10px 0;
-        padding: 10px;
-        background-color: #f8f9fa;
-        border-radius: 5px;
-    }
     .set-row {
         display: flex;
         align-items: center;
@@ -50,12 +26,7 @@
     .delete-button:hover {
         background-color: #c82333;
     }
-    .add-exercise-form {
-        margin: 20px 0;
-        padding: 15px;
-        background-color: #f8f9fa;
-        border-radius: 5px;
-    }
+    
     .last-performance {
         font-size: 0.9em;
         color: #6c757d;
@@ -96,6 +67,7 @@
     <div class="status-message in-progress">
         This workout is in progress.
     </div>
+    {% endif %}
 
     <div class="add-exercise-form">
         <h3>Add Exercise</h3>
@@ -112,7 +84,7 @@
             <button type="submit" class="button">Add Exercise</button>
         </form>
     </div>
-    {% endif %}
+    
 
     <h2>Exercises</h2>
 
