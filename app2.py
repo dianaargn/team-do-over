@@ -823,92 +823,113 @@ def edit_history(workout_id):
         return redirect(url_for('history'))
     
     available_exercises = Exercise.query.order_by(Exercise.category, Exercise.name).all()
+
+    # Get previous performance data for each exercise
+    last_performances = {}
+    for s in workout.sets:
+        if s.exercise_id not in last_performances:
+            # Get the last workout that included this exercise
+            previous_workout = Workout.query.join(WorkoutSet).filter(
+                Workout.user_id == current_user.id,
+                Workout.id != workout.id,
+                WorkoutSet.exercise_id == s.exercise_id,
+                WorkoutSet.completed == True,
+                WorkoutSet.weight.isnot(None),
+                WorkoutSet.reps.isnot(None)
+            ).order_by(Workout.date.desc()).first()
+
+            if previous_workout:
+                # Get all sets from that workout for this exercise
+                previous_sets = WorkoutSet.query.filter(
+                    WorkoutSet.workout_id == previous_workout.id,
+                    WorkoutSet.exercise_id == s.exercise_id,
+                    WorkoutSet.completed == True,
+                    WorkoutSet.weight.isnot(None),
+                    WorkoutSet.reps.isnot(None)
+                ).order_by(WorkoutSet.id).all()
+
+                # Store each set's data in a dictionary
+                last_performances[s.exercise_id] = {}
+                for idx, prev_set in enumerate(previous_sets):
+                    last_performances[s.exercise_id][idx] = {
+                        'weight': prev_set.weight,
+                        'reps': prev_set.reps,
+                        'rpe': prev_set.rpe,
+                        'date': previous_workout.date
+                    }
+
     return render_template('edit_history.html', 
                          workout=workout,
-                         available_exercises=available_exercises)
+                         last_performances=last_performances,
+                         available_exercises=available_exercises,
+                         is_editing=True)
 
 @app.route('/history/edit/<int:workout_id>/save', methods=['POST'])
 @login_required
 def save_history_edit(workout_id):
     workout = Workout.query.get_or_404(workout_id)
     if workout.user_id != current_user.id:
-        flash("You don't have access to edit this workout.", 'error')
-        return redirect(url_for('history'))
+        return jsonify({"error": "Unauthorized"}), 403
 
-    # Get all sets data from the form
-    sets_dict = {}
-    for key, value in request.form.items():
-        if key.startswith('sets['):
+    try:
+        # Process each set's data
+        for key, value in request.form.items():
+            if not key.startswith('sets['):
+                continue
+
             try:
-                # Extract the set_id and field using regex pattern matching
+                # Extract set ID and field using regex
                 import re
                 pattern = r'sets\[(\d+)\]\[(\w+)\]'
                 match = re.match(pattern, key)
                 if not match:
                     continue
-                    
+                
                 set_id = int(match.group(1))
                 field = match.group(2)
                 
-                if set_id not in sets_dict:
-                    sets_dict[set_id] = {}
-                sets_dict[set_id][field] = value
-            except (ValueError, IndexError, AttributeError):
-                continue
+                # Get the workout set
+                workout_set = WorkoutSet.query.get(set_id)
+                if not workout_set or workout_set.workout_id != workout_id:
+                    continue
 
-    # Update each set with the form data
-    try:
-        for set_id, fields in sets_dict.items():
-            workout_set = WorkoutSet.query.get(set_id)
-            if not workout_set or workout_set.workout_id != workout.id:
-                continue
+                # Update the appropriate field with proper type conversion
+                value = value.strip()
+                if value:  # Only process non-empty values
+                    try:
+                        if field == 'weight':
+                            workout_set.weight = float(value)
+                        elif field == 'reps':
+                            workout_set.reps = int(value)
+                        elif field == 'rpe':
+                            rpe_value = float(value)
+                            if not (1 <= rpe_value <= 10):
+                                return jsonify({"error": f"Invalid RPE value: {rpe_value}. Must be between 1 and 10."}), 400
+                            workout_set.rpe = rpe_value
+                        elif field == 'rir':
+                            rir_value = int(value)
+                            if not (0 <= rir_value <= 9):
+                                return jsonify({"error": f"Invalid RIR value: {rir_value}. Must be between 0 and 9."}), 400
+                            workout_set.rir = rir_value
+                    except (ValueError, TypeError) as e:
+                        return jsonify({"error": f"Invalid value for {field}: {value}"}), 400
+                else:
+                    # Handle empty values by setting to None
+                    setattr(workout_set, field, None)
 
-            # Update weight if provided
-            if 'weight' in fields and fields['weight'].strip():
-                try:
-                    workout_set.weight = float(fields['weight'])
-                except ValueError:
-                    flash(f"Invalid weight value for set {set_id}.", 'error')
-                    return redirect(url_for('edit_history', workout_id=workout_id))
+            except (ValueError, IndexError) as e:
+                return jsonify({"error": f"Error processing set data: {str(e)}"}), 400
 
-            # Update reps if provided
-            if 'reps' in fields and fields['reps'].strip():
-                try:
-                    workout_set.reps = int(fields['reps'])
-                except ValueError:
-                    flash(f"Invalid reps value for set {set_id}.", 'error')
-                    return redirect(url_for('edit_history', workout_id=workout_id))
-
-            # Update RPE if provided
-            if 'rpe' in fields and fields['rpe'].strip():
-                try:
-                    rpe_value = float(fields['rpe'])
-                    if not (1 <= rpe_value <= 10):
-                        raise ValueError
-                    workout_set.rpe = rpe_value
-                except ValueError:
-                    flash(f"Invalid RPE value for set {set_id}. Must be between 1 and 10.", 'error')
-                    return redirect(url_for('edit_history', workout_id=workout_id))
-
-            # Update RIR if provided
-            if 'rir' in fields and fields['rir'].strip():
-                try:
-                    rir_value = int(fields['rir'])
-                    if not (0 <= rir_value <= 9):
-                        raise ValueError
-                    workout_set.rir = rir_value
-                except ValueError:
-                    flash(f"Invalid RIR value for set {set_id}. Must be between 0 and 9.", 'error')
-                    return redirect(url_for('edit_history', workout_id=workout_id))
+        # Mark all sets as completed
+        for workout_set in workout.sets:
+            workout_set.completed = True
 
         db.session.commit()
-        flash('Workout updated successfully!', 'success')
-        return redirect(url_for('history'))
-        
+        return jsonify({"success": True})
+
     except Exception as e:
         db.session.rollback()
-        flash(f'Error saving workout: {str(e)}', 'error')
-        return redirect(url_for('edit_history', workout_id=workout_id))
+        return jsonify({"error": str(e)}), 400
 
 @app.route('/history/edit/<int:workout_id>/exercise/add', methods=['POST'])
 @login_required
