@@ -177,7 +177,7 @@ def register():
 
 # ----------------------- Dashboard Routes -----------------------
 
-@app.route('/template/<int:template_id>/start', methods=['POST'])
+@app.route('/template/<int:template_id>/start', methods=['POST', 'GET'])
 @login_required
 def start_workout(template_id):
     template = WorkoutTemplate.query.get_or_404(template_id)
@@ -185,35 +185,51 @@ def start_workout(template_id):
         flash("You don't have access to this template.", 'error')
         return redirect(url_for('dashboard'))
 
-    # Create a new workout from the template
-    new_workout = Workout(
-        user_id=current_user.id,
-        template_id=template_id,
-        date=datetime.utcnow(),
-        name=template.name,
-        notes=None
-    )
-    db.session.add(new_workout)
-    db.session.commit()
+    try:
+        # Create the workout
+        new_workout = Workout(
+            user_id=current_user.id,
+            template_id=template_id,
+            date=datetime.utcnow(),
+            name=template.name,
+            notes=None
+        )
+        db.session.add(new_workout)
+        db.session.commit()
 
-    # Create WorkoutSet entries from the template exercises
-    for ex in template.exercises:
-        for i in range(ex.sets):
-            new_set = WorkoutSet(
-                workout_id=new_workout.id,
-                exercise_id=ex.exercise_id,
-                weight=ex.weight,
-                rpe=ex.rpe,
-                rir=ex.rir,
-                notes=f"Suggested: {ex.reps}" if ex.reps else None,
-                completed=False
-            )
-            db.session.add(new_set)
+        # Create sets from template exercises
+        for template_exercise in template.exercises:
+            # Create the specified number of sets for each exercise
+            for _ in range(template_exercise.sets):
+                # Handle reps conversion properly
+                reps_value = None
+                if template_exercise.reps:
+                    # If reps contains a range (e.g., "8-12"), take the first number
+                    try:
+                        reps_value = int(template_exercise.reps.split('-')[0]) if '-' in template_exercise.reps else int(template_exercise.reps)
+                    except (ValueError, AttributeError):
+                        reps_value = None
 
-    db.session.commit()
-    flash('Workout started from template!', 'success')
-    return redirect(url_for('view_workout', workout_id=new_workout.id))
+                new_set = WorkoutSet(
+                    workout_id=new_workout.id,
+                    exercise_id=template_exercise.exercise_id,
+                    weight=template_exercise.weight,  # This will already be float or None
+                    reps=reps_value,
+                    rpe=template_exercise.rpe,    # This will already be float or None
+                    rir=template_exercise.rir,    # This will already be int or None
+                    notes=template_exercise.notes,
+                    completed=False
+                )
+                db.session.add(new_set)
+        
+        db.session.commit()
+        flash('Workout started from template!', 'success')
+        return redirect(url_for('view_workout', workout_id=new_workout.id))
 
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error starting workout: {str(e)}', 'error')
+        return redirect(url_for('dashboard'))
 @app.route('/dashboard')
 @login_required
 def dashboard():
@@ -387,19 +403,17 @@ def add_template_exercise(template_id):
     rir = request.form.get('rir')
     notes = request.form.get('notes')
 
+    # Convert empty strings to None
     if reps == '':
         reps = None
-
     if weight == '':
         weight = None
     else:
         weight = float(weight) if weight else None
-
     if rpe == '':
         rpe = None
     else:
         rpe = float(rpe) if rpe else None
-
     if rir == '':
         rir = None
     else:
@@ -439,59 +453,36 @@ def delete_template_exercise(template_id, exercise_id):
 
 # ----------------------- Workout Routes -----------------------
 
-@app.route('/workout/<int:workout_id>/add_exercise', methods=['POST'])
+# In app.py, update the update_set_api function:
+@app.route('/workout/set/<int:set_id>/update', methods=['POST'])
 @login_required
-def add_exercise_to_workout(workout_id):
-    workout = Workout.query.get_or_404(workout_id)
-    if workout.user_id != current_user.id:
-        flash("You don't have access to this workout.", 'error')
-        return redirect(url_for('dashboard'))
-    
-    exercise_id = request.form.get('exercise_id')
-    sets = request.form.get('sets', 1)
+def update_set_api(set_id):
+    w_set = WorkoutSet.query.get_or_404(set_id)
+    if w_set.workout.user_id != current_user.id:
+        return jsonify({"error": "Unauthorized"}), 403
 
-    if not exercise_id or not sets:
-        flash('Exercise and number of sets are required.', 'error')
-        return redirect(url_for('view_workout', workout_id=workout_id))
-
+    data = request.json
     try:
-        exercise_id = int(exercise_id)
-        sets = int(sets)
-    except ValueError:
-        flash('Invalid input for exercise or sets.', 'error')
-        return redirect(url_for('view_workout', workout_id=workout_id))
+        # Update to handle null/empty values correctly
+        if 'weight' in data:
+            w_set.weight = float(data['weight']) if data['weight'] not in [None, ''] else None
+        if 'reps' in data:
+            w_set.reps = int(data['reps']) if data['reps'] not in [None, ''] else None
+        if 'rpe' in data:
+            w_set.rpe = float(data['rpe']) if data['rpe'] not in [None, ''] else None
+        if 'rir' in data:
+            w_set.rir = int(data['rir']) if data['rir'] not in [None, ''] else None
+        if 'notes' in data:
+            w_set.notes = data['notes']
+        
+        w_set.completed = True
+        db.session.commit()
+        return jsonify({"success": True})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 400
 
-    for _ in range(sets):
-        new_set = WorkoutSet(
-            workout_id=workout_id,
-            exercise_id=exercise_id,
-            completed=False
-        )
-        db.session.add(new_set)
-    
-    db.session.commit()
-    flash('Exercise added to workout.', 'success')
-    return redirect(url_for('view_workout', workout_id=workout_id))
-
-@app.route('/workout/<int:workout_id>/exercise/<int:exercise_id>/add_set', methods=['POST'])
-@login_required
-def add_set_to_exercise(workout_id, exercise_id):
-    workout = Workout.query.get_or_404(workout_id)
-    if workout.user_id != current_user.id:
-        flash("You don't have access to this workout.", 'error')
-        return redirect(url_for('dashboard'))
-    
-    new_set = WorkoutSet(
-        workout_id=workout_id,
-        exercise_id=exercise_id,
-        completed=False
-    )
-    db.session.add(new_set)
-    db.session.commit()
-    
-    flash('Set added.', 'success')
-    return redirect(url_for('view_workout', workout_id=workout_id))
-
+# Update the finish_workout function to properly handle all set data:
 @app.route('/workout/<int:workout_id>/finish', methods=['POST'])
 @login_required
 def finish_workout(workout_id):
@@ -508,9 +499,7 @@ def finish_workout(workout_id):
     
     if action == 'cancel':
         try:
-            # Delete all sets first
             WorkoutSet.query.filter_by(workout_id=workout_id).delete()
-            # Then delete the workout
             db.session.delete(workout)
             db.session.commit()
             flash("Workout cancelled.", "info")
@@ -520,62 +509,44 @@ def finish_workout(workout_id):
             flash(f"Error cancelling workout: {str(e)}", "error")
             return redirect(url_for('view_workout', workout_id=workout_id))
 
-    # Handle finishing the workout
     try:
-        # Process all sets that have data
+        # Process each set's data
         for key, value in request.form.items():
             if not key.startswith('sets['):
                 continue
                 
-            parts = key.split('[')
-            if len(parts) < 3:
-                continue
+            try:
+                # Extract the set ID and field name using string operations
+                key_parts = key.replace('sets[', '').replace(']', ' ').strip()
+                set_id, field = key_parts.split('[')
+                field = field.strip('[]')
+                set_id = int(set_id)
                 
-            set_id = parts[1].rstrip(']')
-            field = parts[2].rstrip(']')
-            
-            workout_set = WorkoutSet.query.get(set_id)
-            if not workout_set or workout_set.workout_id != workout.id:
-                continue
+                # Get the workout set
+                w_set = WorkoutSet.query.get(set_id)
+                if not w_set or w_set.workout_id != workout_id:
+                    continue
+                
+                # Update the appropriate field with proper type conversion
+                if value.strip():  # Only process non-empty values
+                    if field == 'weight':
+                        w_set.weight = float(value)
+                    elif field == 'reps':
+                        w_set.reps = int(value)
+                    elif field == 'rpe':
+                        w_set.rpe = float(value)
+                    elif field == 'rir':
+                        w_set.rir = int(value)
+                else:
+                    # Handle empty values by setting to None
+                    setattr(w_set, field, None)
+                
+                w_set.completed = True
+                
+            except (ValueError, IndexError) as e:
+                flash(f"Error processing set data: {str(e)}", "error")
+                return redirect(url_for('view_workout', workout_id=workout_id))
 
-            # Only process sets that have both weight and reps
-            if field == 'weight' and value:
-                try:
-                    workout_set.weight = float(value)
-                    workout_set.completed = True
-                except ValueError:
-                    flash(f"Invalid weight value provided.", 'error')
-                    return redirect(url_for('view_workout', workout_id=workout_id))
-            
-            if field == 'reps' and value:
-                try:
-                    workout_set.reps = int(value)
-                    workout_set.completed = True
-                except ValueError:
-                    flash(f"Invalid reps value provided.", 'error')
-                    return redirect(url_for('view_workout', workout_id=workout_id))
-            
-            if field == 'rpe' and value:
-                try:
-                    rpe_value = float(value)
-                    if not (1 <= rpe_value <= 10):
-                        raise ValueError
-                    workout_set.rpe = rpe_value
-                except ValueError:
-                    flash(f"Invalid RPE value provided.", 'error')
-                    return redirect(url_for('view_workout', workout_id=workout_id))
-            
-            if field == 'rir' and value:
-                try:
-                    rir_value = int(value)
-                    if not (0 <= rir_value <= 9):
-                        raise ValueError
-                    workout_set.rir = rir_value
-                except ValueError:
-                    flash(f"Invalid RIR value provided.", 'error')
-                    return redirect(url_for('view_workout', workout_id=workout_id))
-
-        # If we get here, either all filled sets are valid or user confirmed incomplete sets
         workout.completed = True
         db.session.commit()
         flash("Workout completed successfully!", "success")
@@ -585,6 +556,29 @@ def finish_workout(workout_id):
         db.session.rollback()
         flash(f"Error saving workout: {str(e)}", "error")
         return redirect(url_for('view_workout', workout_id=workout_id))
+
+@app.route('/workout/<int:workout_id>/exercise/<int:exercise_id>/add_set', methods=['POST'])
+@login_required
+def add_set_to_exercise(workout_id, exercise_id):
+    workout = Workout.query.get_or_404(workout_id)
+    if workout.user_id != current_user.id:
+        flash("You don't have access to this workout.", 'error')
+        return redirect(url_for('dashboard'))
+    
+    # Collect form data
+    form_data = {k: v for k, v in request.form.items() if k.startswith('sets[')}
+    
+    new_set = WorkoutSet(
+        workout_id=workout_id,
+        exercise_id=exercise_id,
+        completed=False
+    )
+    db.session.add(new_set)
+    db.session.commit()
+    
+    flash('Set added.', 'success')
+    # Redirect with preserved form data
+    return redirect(url_for('view_workout', workout_id=workout_id, **form_data))
 
 @app.route('/workout/<int:workout_id>')
 @login_required
@@ -635,32 +629,46 @@ def view_workout(workout_id):
                            last_performances=last_performances,
                            available_exercises=available_exercises)
 
-# ----------------------- API Routes -----------------------
-
-@app.route('/api/set/<int:set_id>/update', methods=['POST'])
+@app.route('/workout/<int:workout_id>/add_exercise', methods=['POST'])
 @login_required
-def update_set_api(set_id):
-    w_set = WorkoutSet.query.get_or_404(set_id)
-    if w_set.workout.user_id != current_user.id:
-        return jsonify({"error": "Unauthorized"}), 403
-
-    data = request.json
-
-    if 'weight' in data:
-        w_set.weight = data['weight']
-    if 'reps' in data:
-        w_set.reps = data['reps']
-    if 'rpe' in data:
-        w_set.rpe = data['rpe']
-    if 'rir' in data:
-        w_set.rir = data['rir']
-    if 'notes' in data:
-        w_set.notes = data['notes']
-
-    w_set.completed = True
+def add_exercise_to_workout(workout_id):  # Leave the function name as is
+    workout = Workout.query.get_or_404(workout_id)
+    if workout.user_id != current_user.id:
+        flash("You don't have access to this workout.", 'error')
+        return redirect(url_for('dashboard'))
+    
+    exercise_id = request.form.get('exercise_id')
+    sets = int(request.form.get('sets', 1))
+    
+    # Get default values if they exist in the form
+    weight = request.form.get('weight')
+    reps = request.form.get('reps')
+    rpe = request.form.get('rpe')
+    rir = request.form.get('rir')
+    notes = request.form.get('notes')
+    
+    # Convert to appropriate types
+    weight = float(weight) if weight and weight != '' else None
+    reps = int(reps) if reps and reps != '' else None
+    rpe = float(rpe) if rpe and rpe != '' else None
+    rir = int(rir) if rir and rir != '' else None
+    
+    for _ in range(sets):
+        new_set = WorkoutSet(
+            workout_id=workout_id,
+            exercise_id=exercise_id,
+            weight=weight,
+            reps=reps,
+            rpe=rpe,
+            rir=rir,
+            notes=notes,
+            completed=False
+        )
+        db.session.add(new_set)
+    
     db.session.commit()
-
-    return jsonify({"success": True})
+    flash('Exercise added to workout', 'success')
+    return redirect(url_for('view_workout', workout_id=workout_id))
 
 # ----------------------- Profile Routes -----------------------
 
@@ -774,7 +782,10 @@ def delete_exercise_from_workout(workout_id, exercise_id):
         flash("You don't have access to this workout.", 'error')
         return redirect(url_for('dashboard'))
 
-    # Delete all sets for this exercise
+    # Collect form data
+    form_data = {k: v for k, v in request.form.items() if k.startswith('sets[')}
+
+    # Delete the exercise sets
     WorkoutSet.query.filter_by(
         workout_id=workout_id,
         exercise_id=exercise_id
@@ -782,7 +793,7 @@ def delete_exercise_from_workout(workout_id, exercise_id):
 
     db.session.commit()
     flash('Exercise removed from workout.', 'success')
-    return redirect(url_for('view_workout', workout_id=workout_id))
+    return redirect(url_for('view_workout', workout_id=workout_id, **form_data))
 
 @app.route('/workout/set/<int:set_id>/delete', methods=['POST'])
 @login_required
@@ -792,11 +803,14 @@ def delete_set(set_id):
         flash("You don't have access to this set.", 'error')
         return redirect(url_for('dashboard'))
 
+    # Collect form data
+    form_data = {k: v for k, v in request.form.items() if k.startswith('sets[')}
+
     workout_id = w_set.workout_id
     db.session.delete(w_set)
     db.session.commit()
     flash('Set deleted.', 'success')
-    return redirect(url_for('view_workout', workout_id=workout_id))
+    return redirect(url_for('view_workout', workout_id=workout_id, **form_data))
 
 # ----------------------- History Edit Routes -----------------------
 
@@ -823,66 +837,74 @@ def save_history_edit(workout_id):
 
     # Get all sets data from the form
     sets_dict = {}
-    for key in request.form:
+    for key, value in request.form.items():
         if key.startswith('sets['):
-            # Extract set_id and field name from format "sets[1][weight]"
-            parts = key.split('[')
-            if len(parts) < 3:
+            try:
+                # Extract the set_id and field using regex pattern matching
+                import re
+                pattern = r'sets\[(\d+)\]\[(\w+)\]'
+                match = re.match(pattern, key)
+                if not match:
+                    continue
+                    
+                set_id = int(match.group(1))
+                field = match.group(2)
+                
+                if set_id not in sets_dict:
+                    sets_dict[set_id] = {}
+                sets_dict[set_id][field] = value
+            except (ValueError, IndexError, AttributeError):
                 continue
-            set_id = parts[1].rstrip(']')
-            field = parts[2].rstrip(']')
-            if set_id not in sets_dict:
-                sets_dict[set_id] = {}
-            sets_dict[set_id][field] = request.form.get(key)
 
     # Update each set with the form data
-    for set_id, fields in sets_dict.items():
-        workout_set = WorkoutSet.query.get(set_id)
-        if not workout_set or workout_set.workout_id != workout.id:
-            continue
-
-        # Update weight if provided
-        if 'weight' in fields and fields['weight']:
-            try:
-                workout_set.weight = float(fields['weight'])
-            except ValueError:
-                flash(f"Invalid weight value for set {set_id}.", 'error')
-                return redirect(url_for('edit_history', workout_id=workout_id))
-
-        # Update reps if provided
-        if 'reps' in fields and fields['reps']:
-            try:
-                workout_set.reps = int(fields['reps'])
-            except ValueError:
-                flash(f"Invalid reps value for set {set_id}.", 'error')
-                return redirect(url_for('edit_history', workout_id=workout_id))
-
-        # Update RPE if provided
-        if 'rpe' in fields and fields['rpe']:
-            try:
-                rpe_value = float(fields['rpe'])
-                if not (1 <= rpe_value <= 10):
-                    raise ValueError
-                workout_set.rpe = rpe_value
-            except ValueError:
-                flash(f"Invalid RPE value for set {set_id}. Must be between 1 and 10.", 'error')
-                return redirect(url_for('edit_history', workout_id=workout_id))
-
-        # Update RIR if provided
-        if 'rir' in fields and fields['rir']:
-            try:
-                rir_value = int(fields['rir'])
-                if not (0 <= rir_value <= 9):
-                    raise ValueError
-                workout_set.rir = rir_value
-            except ValueError:
-                flash(f"Invalid RIR value for set {set_id}. Must be between 0 and 9.", 'error')
-                return redirect(url_for('edit_history', workout_id=workout_id))
-
     try:
+        for set_id, fields in sets_dict.items():
+            workout_set = WorkoutSet.query.get(set_id)
+            if not workout_set or workout_set.workout_id != workout.id:
+                continue
+
+            # Update weight if provided
+            if 'weight' in fields and fields['weight'].strip():
+                try:
+                    workout_set.weight = float(fields['weight'])
+                except ValueError:
+                    flash(f"Invalid weight value for set {set_id}.", 'error')
+                    return redirect(url_for('edit_history', workout_id=workout_id))
+
+            # Update reps if provided
+            if 'reps' in fields and fields['reps'].strip():
+                try:
+                    workout_set.reps = int(fields['reps'])
+                except ValueError:
+                    flash(f"Invalid reps value for set {set_id}.", 'error')
+                    return redirect(url_for('edit_history', workout_id=workout_id))
+
+            # Update RPE if provided
+            if 'rpe' in fields and fields['rpe'].strip():
+                try:
+                    rpe_value = float(fields['rpe'])
+                    if not (1 <= rpe_value <= 10):
+                        raise ValueError
+                    workout_set.rpe = rpe_value
+                except ValueError:
+                    flash(f"Invalid RPE value for set {set_id}. Must be between 1 and 10.", 'error')
+                    return redirect(url_for('edit_history', workout_id=workout_id))
+
+            # Update RIR if provided
+            if 'rir' in fields and fields['rir'].strip():
+                try:
+                    rir_value = int(fields['rir'])
+                    if not (0 <= rir_value <= 9):
+                        raise ValueError
+                    workout_set.rir = rir_value
+                except ValueError:
+                    flash(f"Invalid RIR value for set {set_id}. Must be between 0 and 9.", 'error')
+                    return redirect(url_for('edit_history', workout_id=workout_id))
+
         db.session.commit()
         flash('Workout updated successfully!', 'success')
         return redirect(url_for('history'))
+        
     except Exception as e:
         db.session.rollback()
         flash(f'Error saving workout: {str(e)}', 'error')

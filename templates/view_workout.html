@@ -1,15 +1,67 @@
 {% extends "base.html" %}
 {% block content %}
 <style>
+    /* Combined CSS styles from both templates */
+
+    .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+    .logout {
+        text-align: right;
+        margin-bottom: 10px;
+    }
+    .logout .button {
+        background-color: #6c757d;
+    }
+    .logout .button:hover {
+        background-color: #5a6268;
+    }
+    .exercise-container {
+        margin: 20px 0;
+        padding: 15px;
+        border: 1px solid #dee2e6;
+        border-radius: 5px;
+    }
+    .exercise-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+    }
+    .set-container {
+        margin: 10px 0;
+        padding: 10px;
+        background-color: #f8f9fa;
+        border-radius: 5px;
+    }
     .set-row {
         display: flex;
         align-items: center;
         gap: 10px;
     }
+    .set-number {
+        width: 60px;
+        font-weight: bold;
+    }
     .set-inputs {
         display: flex;
         gap: 15px;
         flex-grow: 1;
+    }
+    .input-column {
+        display: flex;
+        flex-direction: column;
+    }
+    .input-column label {
+        margin-bottom: 5px;
+        font-size: 0.9em;
+    }
+    .input-column input {
+        padding: 5px;
+        border: 1px solid #ced4da;
+        border-radius: 3px;
     }
     .button {
         padding: 5px 15px;
@@ -19,6 +71,10 @@
         background-color: #007bff;
         color: white;
         text-decoration: none;
+        font-size: 0.9em;
+    }
+    .button:hover {
+        opacity: 0.9;
     }
     .delete-button {
         background-color: #dc3545;
@@ -49,16 +105,36 @@
         margin-top: 20px;
         text-align: right;
     }
+    .status-message {
+        margin: 10px 0;
+        padding: 10px;
+        border-radius: 5px;
+    }
+    .status-message.completed {
+        background-color: #d4edda;
+        color: #155724;
+    }
+    .status-message.in-progress {
+        background-color: #fff3cd;
+        color: #856404;
+    }
+    #timer {
+        font-size: 1.2em;
+        margin-top: 10px;
+    }
 </style>
 
 <div class="container">
+    <!-- Logout Button -->
     <div class="logout">
         <a href="{{ url_for('logout') }}" class="button">Logout</a>
     </div>
 
+    <!-- Workout Header -->
     <h1>{{ workout.name or "Workout" }}</h1>
     <p><strong>Date:</strong> {{ workout.date.strftime('%B %d, %Y at %I:%M %p') }}</p>
 
+    <!-- Workout Status -->
     {% if workout.completed %}
     <div class="status-message completed">
         This workout is completed.
@@ -66,9 +142,11 @@
     {% else %}
     <div class="status-message in-progress">
         This workout is in progress.
+        <div id="timer"></div>
     </div>
     {% endif %}
 
+    <!-- Add Exercise Form -->
     <div class="add-exercise-form">
         <h3>Add Exercise</h3>
         <form action="{{ url_for('add_exercise_to_workout', workout_id=workout.id) }}" method="post">
@@ -81,6 +159,10 @@
             </select>
             <label for="sets">Sets:</label>
             <input type="number" name="sets" id="sets" value="1" min="1" max="10" required>
+            <input type="hidden" name="initial_weight" id="initial_weight">
+            <input type="hidden" name="initial_reps" id="initial_reps">
+            <input type="hidden" name="initial_rpe" id="initial_rpe">
+            <input type="hidden" name="initial_rir" id="initial_rir">
             <button type="submit" class="button">Add Exercise</button>
         </form>
     </div>
@@ -89,14 +171,16 @@
     <h2>Exercises</h2>
 
     {% if workout.sets %}
+    <!-- Main Workout Form -->
     <form action="{{ url_for('finish_workout', workout_id=workout.id) }}" method="post" id="workoutForm">
         <input type="hidden" name="action" id="formAction" value="finish">
-        
+
         {% for exercise_name, sets in workout.sets|groupby('exercise.name') %}
         <div class="exercise-container">
             <div class="exercise-header">
                 <h3>{{ exercise_name }}</h3>
                 {% if not workout.completed %}
+                <!-- Delete Exercise Form -->
                 <form action="{{ url_for('delete_exercise_from_workout', workout_id=workout.id, exercise_id=sets[0].exercise_id) }}" 
                       method="post" 
                       style="display: inline;" 
@@ -130,7 +214,8 @@
                                        step="0.5" 
                                        min="0" 
                                        value="{{ s.weight or '' }}" 
-                                       {% if workout.completed %}readonly{% endif %}>
+                                       {% if workout.completed %}readonly{% endif %}
+                                       onchange="handleInputChange(this)">
                             </div>
                             <div class="input-column">
                                 <label for="reps_{{ s.id }}">Reps:</label>
@@ -139,7 +224,8 @@
                                        id="reps_{{ s.id }}"
                                        min="0" 
                                        value="{{ s.reps or '' }}" 
-                                       {% if workout.completed %}readonly{% endif %}>
+                                       {% if workout.completed %}readonly{% endif %}
+                                       onchange="handleInputChange(this)">
                             </div>
                             <div class="input-column">
                                 <label for="rpe_{{ s.id }}">RPE (1-10):</label>
@@ -150,7 +236,8 @@
                                        min="1" 
                                        max="10" 
                                        value="{{ s.rpe or '' }}" 
-                                       {% if workout.completed %}readonly{% endif %}>
+                                       {% if workout.completed %}readonly{% endif %}
+                                       onchange="handleInputChange(this)">
                             </div>
                             <div class="input-column">
                                 <label for="rir_{{ s.id }}">RIR (0-9):</label>
@@ -160,10 +247,12 @@
                                        min="0" 
                                        max="9" 
                                        value="{{ s.rir or '' }}" 
-                                       {% if workout.completed %}readonly{% endif %}>
+                                       {% if workout.completed %}readonly{% endif %}
+                                       onchange="handleInputChange(this)">
                             </div>
                         </div>
                         {% if not workout.completed %}
+                        <!-- Delete Set Form -->
                         <form action="{{ url_for('delete_set', set_id=s.id) }}" 
                               method="post" 
                               style="display: inline;"
@@ -175,7 +264,9 @@
                 </div>
                 {% endfor %}
             </div>
+
             {% if not workout.completed %}
+            <!-- Add Set Form -->
             <form action="{{ url_for('add_set_to_exercise', workout_id=workout.id, exercise_id=sets[0].exercise_id) }}" 
                   method="post" class="add-set-form">
                 <button type="submit" class="button">Add Set</button>
@@ -196,9 +287,19 @@
     {% endif %}
 
     {% if not workout.completed %}
-    <!-- Timer Script -->
     <script>
-        // Original timer code remains unchanged
+        // Function to collect all set inputs data
+        function collectAllFormData() {
+            const formData = {};
+            document.querySelectorAll('.set-inputs input').forEach(input => {
+                if (input.value) {
+                    formData[input.name] = input.value;
+                }
+            });
+            return formData;
+        }
+
+        // Timer functionality
         const startTime = new Date("{{ workout.date.isoformat() }}").getTime();
         let timerElement = document.getElementById('timer');
         if (!timerElement) {
@@ -206,7 +307,7 @@
             timerElement.id = 'timer';
             timerElement.style.fontSize = '1.2em';
             timerElement.style.marginTop = '10px';
-            document.querySelector('.status-message').appendChild(timerElement);
+            document.querySelector('.status-message.in-progress').appendChild(timerElement);
         }
 
         function updateTimer() {
@@ -222,37 +323,238 @@
         updateTimer();
         setInterval(updateTimer, 1000);
 
-        // New functions for workout completion/cancellation
-        function confirmFinishWorkout() {
-    const form = document.getElementById('workoutForm');
-    const incompleteInputs = Array.from(document.querySelectorAll('input[type="number"]')).some(
-        input => input.value === '' && (input.name.includes('[weight]') || input.name.includes('[reps]'))
-    );
-    
-    if (incompleteInputs) {
-        if (confirm('Some sets are not filled out. Do you still want to finish the workout?')) {
-            // Add hidden input for confirmation
-            const hiddenInput = document.createElement('input');
-            hiddenInput.type = 'hidden';
-            hiddenInput.name = 'confirm_incomplete';
-            hiddenInput.value = 'true';
-            form.appendChild(hiddenInput);
-            
-            document.getElementById('formAction').value = 'finish';
-            form.submit();
-        }
-    } else {
-        document.getElementById('formAction').value = 'finish';
-        form.submit();
-    }
-}
+        // Auto-save functionality with debounce
+        let saveTimeout;
+        const debounceDelay = 1000; // 1 second delay
 
-        function confirmCancelWorkout() {
-            if (confirm('Are you sure you want to cancel this workout? This action cannot be undone.')) {
-                document.getElementById('formAction').value = 'cancel';
-                document.getElementById('workoutForm').submit();
+        function handleInputChange(input) {
+            const setDiv = input.closest('.set-inputs');
+            if (!setDiv) return;
+            const setId = setDiv.dataset.setId;
+            const fieldMatch = input.name.match(/\[(\w+)\]$/);
+            const field = fieldMatch ? fieldMatch[1] : null;
+            let value = input.value.trim();
+
+            if (value === '') {
+                value = null;
+            } else {
+                // Convert to appropriate type
+                switch(field) {
+                    case 'weight':
+                    case 'rpe':
+                        value = parseFloat(value);
+                        break;
+                    case 'reps':
+                    case 'rir':
+                        value = parseInt(value);
+                        break;
+                }
+            }
+
+            // Store the current form data immediately
+            localStorage.setItem('currentFormData', JSON.stringify(collectAllFormData()));
+
+            // Clear any pending timeout
+            if (saveTimeout) {
+                clearTimeout(saveTimeout);
+            }
+
+            // Set new timeout for auto-save
+            saveTimeout = setTimeout(() => {
+                fetch(`/workout/set/${setId}/update`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        [field]: value
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const container = input.closest('.set-container');
+                        container.style.backgroundColor = '#e8f5e9';
+                        setTimeout(() => {
+                            container.style.backgroundColor = '#f8f9fa';
+                        }, 200);
+                    } else {
+                        console.error('Error saving data:', data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+            }, debounceDelay);
+        }
+
+        // Confirm Finish Workout
+        function confirmFinishWorkout() {
+            const form = document.getElementById('workoutForm');
+
+            // Collect all set data
+            const allSetData = {};
+            document.querySelectorAll('.set-inputs').forEach(setDiv => {
+                const setId = setDiv.dataset.setId;
+                const inputs = setDiv.querySelectorAll('input');
+                allSetData[setId] = {};
+                inputs.forEach(input => {
+                    const fieldMatch = input.name.match(/\[(\w+)\]$/);
+                    const field = fieldMatch ? fieldMatch[1] : null;
+                    if (field) {
+                        allSetData[setId][field] = input.value;
+                    }
+                });
+            });
+
+            // Check for incomplete sets
+            const incompleteInputs = Object.values(allSetData).some(
+                set => set.weight === '' || set.reps === ''
+            );
+
+            if (incompleteInputs) {
+                if (confirm('Some sets are not filled out. Do you still want to finish the workout?')) {
+                    const hiddenInput = document.createElement('input');
+                    hiddenInput.type = 'hidden';
+                    hiddenInput.name = 'confirm_incomplete';
+                    hiddenInput.value = 'true';
+                    form.appendChild(hiddenInput);
+
+                    submitWorkoutForm(form, allSetData);
+                }
+            } else {
+                submitWorkoutForm(form, allSetData);
             }
         }
+
+        // Submit Workout Form with all set data
+        function submitWorkoutForm(form, allSetData) {
+            document.getElementById('formAction').value = 'finish';
+
+            // Clear any existing set data hidden inputs
+            form.querySelectorAll('input[name^="sets["]').forEach(input => {
+                if (input.type === 'hidden') {
+                    input.remove();
+                }
+            });
+
+            // Add all set data as hidden inputs
+            Object.entries(allSetData).forEach(([setId, setData]) => {
+                Object.entries(setData).forEach(([field, value]) => {
+                    const hidden = document.createElement('input');
+                    hidden.type = 'hidden';
+                    hidden.name = `sets[${setId}][${field}]`;
+                    hidden.value = value;
+                    form.appendChild(hidden);
+                });
+            });
+
+            form.submit();
+        }
+
+        // Confirm Cancel Workout
+        function confirmCancelWorkout() {
+            if (confirm('Are you sure you want to cancel this workout? This action cannot be undone.')) {
+                const form = document.getElementById('workoutForm');
+                const hiddenInput = document.createElement('input');
+                hiddenInput.type = 'hidden';
+                hiddenInput.name = 'action';
+                hiddenInput.value = 'cancel';
+                form.appendChild(hiddenInput);
+                form.submit();
+            }
+        }
+
+        // Preserve form data during submissions
+        document.querySelectorAll('form').forEach(form => {
+            form.addEventListener('submit', function(e) {
+                // Don't handle the main workout form
+                if (this.id === 'workoutForm') {
+                    return;
+                }
+
+                // Store current scroll position
+                localStorage.setItem('scrollPosition', window.scrollY);
+
+                // Get all current form data
+                const currentFormData = collectAllFormData();
+
+                // Add hidden inputs for all form data
+                Object.entries(currentFormData).forEach(([name, value]) => {
+                    if (!this.querySelector(`input[name="${name}"]`)) {
+                        const hidden = document.createElement('input');
+                        hidden.type = 'hidden';
+                        hidden.name = name;
+                        hidden.value = value;
+                        this.appendChild(hidden);
+                    }
+                });
+            });
+        });
+
+        // Restore data and scroll position after page load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Restore form data from localStorage if it exists
+            const storedFormData = localStorage.getItem('currentFormData');
+            if (storedFormData) {
+                const formData = JSON.parse(storedFormData);
+                Object.entries(formData).forEach(([name, value]) => {
+                    const input = document.querySelector(`input[name="${name}"]`);
+                    if (input) {
+                        input.value = value;
+                    }
+                });
+                // Clear the stored data after restoring
+                localStorage.removeItem('currentFormData');
+            }
+
+            // Restore scroll position
+            const scrollPosition = localStorage.getItem('scrollPosition');
+            if (scrollPosition) {
+                setTimeout(() => {
+                    window.scrollTo(0, parseInt(scrollPosition));
+                    localStorage.removeItem('scrollPosition');
+                }, 100);
+            }
+
+            // Handle Add Exercise form submission
+            const addExerciseForm = document.querySelector('.add-exercise-form form');
+            if (addExerciseForm) {
+                addExerciseForm.addEventListener('submit', function(e) {
+                    // Get the last set's values
+                    const lastSet = document.querySelector('.set-inputs:last-child');
+                    if (lastSet) {
+                        const weight = lastSet.querySelector('input[name$="[weight]"]').value;
+                        const reps = lastSet.querySelector('input[name$="[reps]"]').value;
+                        const rpe = lastSet.querySelector('input[name$="[rpe]"]').value;
+                        const rir = lastSet.querySelector('input[name$="[rir]"]').value;
+                        
+                        // Set the hidden input values
+                        document.getElementById('initial_weight').value = weight;
+                        document.getElementById('initial_reps').value = reps;
+                        document.getElementById('initial_rpe').value = rpe;
+                        document.getElementById('initial_rir').value = rir;
+                    }
+
+                    // Add current form data as hidden inputs
+                    const currentData = collectAllFormData();
+                    Object.entries(currentData).forEach(([name, value]) => {
+                        if (!this.querySelector(`input[name="${name}"]`)) {
+                            const hidden = document.createElement('input');
+                            hidden.type = 'hidden';
+                            hidden.name = name;
+                            hidden.value = value;
+                            this.appendChild(hidden);
+                        }
+                    });
+                });
+            }
+
+            // Add event listeners to all existing set inputs
+            document.querySelectorAll('.set-inputs input').forEach(input => {
+                input.addEventListener('change', function() {
+                    handleInputChange(this);
+                });
+            });
+        });
     </script>
     {% endif %}
 
