@@ -31,8 +31,9 @@ body {
 
 /* ========== Containers ========== */
 .container {
-    max-width: 600px;
+    max-width: 1200px;
     margin: 0 auto;
+    padding: 20px;
     background-color: var(--card-background);
     border-radius: 12px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
@@ -47,13 +48,27 @@ body {
 }
 
 .resume-workout-container {
-    background-color: #fff3cd;
-    border: 1px solid #ffeeba;
-    padding: 15px;
+background-color: #fff3cd;
+border: 1px solid #ffeeba;
+padding: 15px;
     border-radius: 8px;
     margin-bottom: 20px;
 }
 
+/*in view_workout*/
+.exercise-container {
+    margin: 20px 0;
+    padding: 15px;
+    border: 1px solid #dee2e6;
+    border-radius: 5px;
+}
+
+.set-container {
+    margin: 10px 0;
+    padding: 10px;
+    background-color: #f8f9fa;
+    border-radius: 5px;
+}
 /* ========== Headers ========== */
 h1 {
     font-size: 24px;
@@ -76,7 +91,7 @@ button, a.button {
     padding: 12px 24px;
     border-radius: 8px;
     font-size: 16px;
-    cursor: pointer;
+    cursor:pointer;
     text-decoration: none;
     display: inline-block;
     margin-top: 10px;
@@ -115,6 +130,10 @@ button:active, a.button:active {
     background-color: var(--danger-hover-color);
 }
 
+.logout {
+    text-align: right;
+}
+
 /* ========== Links ========== */
 a {
     color: var(--primary-color);
@@ -136,16 +155,21 @@ input, select, textarea {
     font-size: 16px;
 }
 
-.add-folder-form, .add-template-form {
-    display: flex;
+.folder-form, .template-form {
+    display:flexbox;
     gap: 10px;
     margin-top: 20px;
 }
 
-.add-folder-form input {
+.folder-form input {
     flex: 1;
 }
-
+.add-exercise-form {
+    margin: 20px 0;
+    padding: 15px;
+    background-color: #f8f9fa;
+    border-radius: 5px;
+}
 /* ========== Lists ========== */
 ul {
     list-style: none;
@@ -210,6 +234,14 @@ li:last-child {
 
 .folder-link:hover, .template-link:hover {
     text-decoration: underline;
+}
+/* ========= During a Workout ========== */
+
+.exercise-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
 }
 
 /* ========== Responsiveness ========== */

@@ -10,7 +10,8 @@
     {% endif %}
 
     <div class="folders-section">
-        <h2>Your Workouts</h2>
+        <h1>Your Workouts</h1>
+        <hr /> 
         <div class="folders-container">
             {% for folder in folders %}
             <div class="folder">
@@ -35,6 +36,7 @@
                         </div>
                     </div>
                     {% endfor %}
+                    <hr /> 
                 </div>
                 <form action="{{ url_for('create_template', folder_id=folder.id) }}" method="post" class="template-form">
                     <input type="text" name="name" placeholder="New workout name" required>
@@ -43,7 +45,6 @@
             </div>
             {% endfor %}
         </div>
-
         <form action="{{ url_for('create_folder') }}" method="post" class="folder-form">
             <input type="text" name="name" placeholder="New folder name" required>
             <button type="submit" class="button">Create Folder</button>
