@@ -498,7 +498,11 @@ def finish_workout(workout_id):
         flash("Workout is already completed.", 'info')
         return redirect(url_for('dashboard'))
 
-    action = request.form.get('action', 'finish')
+    action = request.form.get('action','cancel')
+    
+    print("hi")
+    print(action)
+    
     
     if action == 'cancel':
         try:

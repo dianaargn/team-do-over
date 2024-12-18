@@ -306,11 +306,7 @@
         function confirmCancelWorkout() {
             if (confirm('Are you sure you want to cancel this workout? This action cannot be undone.')) {
                 const form = document.getElementById('workoutForm');
-                const hiddenInput = document.createElement('input');
-                hiddenInput.type = 'hidden';
-                hiddenInput.name = 'action';
-                hiddenInput.value = 'cancel';
-                form.appendChild(hiddenInput);
+                document.getElementById('formAction').value = 'cancel'
                 form.submit();
             }
         }
