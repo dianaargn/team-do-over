@@ -17,7 +17,7 @@
                 <div class="folder-header">
                     <h3>{{ folder.name }}</h3>
                     <div class="folder-actions">
-                        <button onclick="showForm('{{folder.id}}')" type="submit" class='button'  >Add Workout</button>
+                        <button onclick="showForm('{{folder.id}}')" type="submit" class='button' >Add Workout</button>
                         <form class="add-folder-form" id={{folder.id}} style="display: none;" action="{{ url_for('create_template', folder_id=folder.id) }}" method="post">
                             <input type="text" name="name" placeholder="New workout name" required>
                             <button class="small-button" type="submit">+</button>

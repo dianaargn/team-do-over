@@ -289,7 +289,7 @@ def view_folder(folder_id):
     if folder.user_id != current_user.id:
         flash("You don't have access to this folder.", 'error')
         return redirect(url_for('dashboard'))
-    return render_template('folder.html', folder=folder)
+    return 
 
 @app.route('/folder/create', methods=['POST'])
 @login_required
@@ -365,7 +365,7 @@ def create_template(folder_id):
             template_name = request.form.get('name')
             if not template_name:
                 flash('Template name is required', 'error')
-                return redirect(url_for('view_folder', folder_id=folder_id))
+                return redirect(url_for('dashboard'))
 
             template = WorkoutTemplate(
                 name=template_name,
@@ -374,13 +374,13 @@ def create_template(folder_id):
             db.session.add(template)
             db.session.commit()
             flash('Template created successfully', 'success')
-            return redirect(url_for('view_folder', folder_id=folder_id))
+            return redirect(url_for('dashboard'))
         except Exception as e:
             db.session.rollback()
             flash(f'Error creating template: {str(e)}', 'error')
-            return redirect(url_for('view_folder', folder_id=folder_id))
+            return redirect(url_for('dashboard'))
     else:
-        return redirect(url_for('view_folder', folder_id=folder_id))
+        return redirect(url_for('dashboard'))
 
 @app.route('/template/<int:template_id>/edit')
 @login_required

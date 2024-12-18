@@ -12,7 +12,7 @@
         <h1>Edit Workout: {{ template.name }}</h1>
 
         <div class="nav-links">
-            <a href="{{ url_for('view_folder', folder_id=template.folder_id) }}" class="button">Back to Folder</a>
+            <a href="{{ url_for('dashboard')}}" class="button">Back to Dashboard</a>
             <form method="POST" action="{{ url_for('start_workout', template_id=template.id) }}" style="display:inline;">
                 <button type="submit" class="button">Start Workout</button>
             </form>
