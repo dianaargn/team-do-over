@@ -169,6 +169,17 @@ a {
 a:hover {
     text-decoration: underline;
 }
+.back-link {
+    display: inline-block;
+    margin-bottom: 20px;
+}
+.back-link a {
+    color: #007AFF;
+    text-decoration: none;
+}
+.back-link a:hover {
+    text-decoration: underline;
+}
 
 /* ========== Forms ========== */
 input, select, textarea {
@@ -299,6 +310,31 @@ li:last-child {
     align-items: center;
     gap: 5px;
     padding: 10px;
+}
+.template-item {
+    padding: 15px;
+    border-bottom: 1px solid #eee;
+}
+.template-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+.template-item:last-child {
+    border-bottom: none;
+}
+.template-item-title {
+    color: #007AFF;
+    text-decoration: none;
+    font-weight: 500;
+}
+.template-item-title:hover {
+    text-decoration: underline;
+}
+.add-template-form {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
 }
 /* ========= During a Workout ========== */
 
