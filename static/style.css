@@ -13,6 +13,7 @@
     --card-background: white;
     --font-color: #333;
     --muted-color: #666;
+    --very-muted-color: #f0eaea;
 }
 
 /* ========== Global Styles ========== */
@@ -248,7 +249,7 @@ li:last-child {
     gap: 5px;
     padding: 10px;
 }
-.template {
+.template-container {
     display: flex;
     align-items: center;
     justify-content: space-between;
