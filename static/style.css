@@ -107,11 +107,11 @@ button:active, a.button:active {
     transform: scale(0.98);
 }
 
-.finish-button, .save-button {
+.finish-button, .save-button, .start-button {
     background-color: var(--success-color);
 }
 
-.finish-button:hover, .save-button:hover {
+.finish-button:hover, .save-button:hover, .start-button {
     background-color: var(--success-hover-color);
 }
 
@@ -157,12 +157,7 @@ input, select, textarea {
     font-size: 16px;
 }
 
-.folder-form, .template-form {
-    display:flex;
-    gap: 20px;
-    white-space: nowrap;
-    justify-content: space-between;
-    align-items: end;
+.folder-form {
     padding: 10px;
 }
 
@@ -245,8 +240,24 @@ li:last-child {
 .folder-header {
     display:flex;
     align-items: center;
-    padding: 10px;
     justify-content: space-between;
+}
+.folder-actions {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 10px;
+}
+.template {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.template-actions {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 10px;
 }
 /* ========= During a Workout ========== */
 
