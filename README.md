@@ -1,6 +1,6 @@
 ** UNNAMED WORKOUT LOGGING APP **
 Carleton College Software Engineering Winter Externship 2024
-Collaborators: Diana Aragon, Adit Garg, Justin Vaughn
+Collaborators: Diana Aragon, Adit Garg, Justin Vaughn \n
 Mentor: Alexandra Price
 
 --Instructions for use --
