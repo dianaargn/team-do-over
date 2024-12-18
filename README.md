@@ -1,6 +1,4 @@
-** UNNAMED WORKOUT LOGGING APP **
-
-Carleton College Software Engineering Winter Externship 2024
+** UNNAMED WORKOUT LOGGING APP ** Carleton College Software Engineering Winter Externship 2024
 
 Collaborators: Diana Aragon, Adit Garg, Justin Vaughn 
 
