@@ -104,6 +104,16 @@ button, a.button {
     transition: background-color 0.3s ease, transform 0.2s ease;
 }
 
+.small-button {
+    background-color: var(--muted-color);
+    color: white;
+    padding: 12px 12px;
+    margin-top: -10px;
+    display: flex;
+
+}
+
+
 button:hover, a.button:hover {
     background-color: var(--primary-hover-color);
 }
@@ -167,10 +177,14 @@ input, select, textarea {
     font-size: 16px;
 }
 
-.folder-form {
-    display: flex;
+.folder-form, .new-folder-form {
+    display: inline-block;
     gap: 10px;
+    align-items: center;
+    justify-content: left;
+    margin-top: 10px;
 }
+
 
 .folder-form input {
     flex: 1;

@@ -49,9 +49,10 @@
             {% endfor %}
         </div>
         <div class="folder-form">
-            <button onclick="showForm('folder-form')" type="submit"">Create New Folder</button>
-            <form id="folder-form" style="display: none;" action="{{ url_for('create_folder') }}" method="post">
+            <button onclick="showForm('folder-form')" type="submit"">New Folder</button>
+            <form class="new-folder-form" id="folder-form" style="display: none;" action="{{ url_for('create_folder') }}" method="post">
                 <input type="text" name="name" placeholder="New folder name" required>
+                <button type="submit" class="small-button">Create</button>
             </form>
         </div>
                 
