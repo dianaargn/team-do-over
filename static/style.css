@@ -112,23 +112,22 @@ button:active, a.button:active {
     background-color: var(--success-color);
 }
 
-.finish-button:hover, .save-button:hover, .start-button {
+.finish-button:hover, .save-button:hover, .start-button:hover {
     background-color: var(--success-hover-color);
 }
 
-.cancel-button, .edit-button {
+.edit-button {
     background-color: var(--neutral-color);
 }
-
-.cancel-button:hover, .edit-button:hover {
+.edit-button:hover {
     background-color: var(--neutral-hover-color);
 }
 
-.delete-button {
+.delete-button, .cancel-button {
     background-color: var(--danger-color);
 }
 
-.delete-button:hover {
+.delete-button:hover, .cancel-button:hover {
     background-color: var(--danger-hover-color);
 }
 
@@ -171,6 +170,19 @@ input, select, textarea {
     background-color: #f8f9fa;
     border-radius: 5px;
 }
+.input-column {
+    display: flex;
+    flex-direction: column;
+}
+.input-column label {
+    margin-bottom: 5px;
+    font-size: 0.9em;
+}
+.input-column input {
+    padding: 5px;
+    border: 1px solid #ced4da;
+    border-radius: 3px;
+}
 
 /* ========== Lists ========== */
 ul {
@@ -204,6 +216,7 @@ li:last-child {
 .bottom-nav a {
     color: var(--font-color);
     font-weight: bold;
+    font-size: larger;
 }
 
 .nav-links {
@@ -267,6 +280,47 @@ li:last-child {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 15px;
+}
+.set-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.set-number {
+    width: 60px;
+    font-weight: bold;
+}
+.set-inputs {
+    display: flex;
+    gap: 15px;
+    flex-grow: 1;
+}
+.last-performance {
+    font-size: 0.9em;
+    color: #6c757d;
+    margin-bottom: 5px;
+}
+
+.workout-actions {
+    margin-top: 20px;
+    text-align: right;
+}
+.status-message {
+    margin: 10px 0;
+    padding: 10px;
+    border-radius: 5px;
+}
+.status-message.completed {
+    background-color: #d4edda;
+    color: #155724;
+}
+.status-message.in-progress {
+    background-color: #fff3cd;
+    color: #856404;
+}
+#timer {
+    font-size: 1.2em;
+    margin-top: 10px;
 }
 
 /* ========== Responsiveness ========== */
