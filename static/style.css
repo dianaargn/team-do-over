@@ -426,3 +426,115 @@ li:last-child {
             border: 1px solid #ffeeba;
         }
 
+/* ========== Authentication Forms ========== */
+.auth-container {
+    max-width: 600px;
+    margin: 40px auto;
+    background: var(--card-background);
+    border-radius: 12px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    padding: 20px;
+}
+
+.auth-container h1 {
+    font-size: 24px;
+    margin: 0 0 20px 0;
+    text-align: center;
+}
+
+.auth-form label {
+    display: block;
+    margin-bottom: 5px;
+    color: var(--muted-color);
+    font-weight: 500;
+}
+
+.auth-form input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 16px;
+    margin-bottom: 15px;
+}
+
+.auth-form button {
+    width: 100%;
+}
+
+.auth-links {
+    text-align: center;
+    margin-top: 20px;
+}
+
+.auth-links a {
+    color: var(--primary-color);
+    text-decoration: none;
+}
+
+.auth-links a:hover {
+    text-decoration: underline;
+}
+
+/* ========== Stats Page ========== */
+.stats-container {
+    margin: 0 auto;
+    padding: 1rem;
+}
+
+.stats-card {
+    margin-bottom: 2rem;
+    padding: 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.stats-chart {
+    height: 400px;
+    position: relative;
+}
+
+.no-data-message {
+    color: var(--muted-color);
+}
+
+/* ========== Chart Customization ========== */
+.chart-container {
+    margin: 20px 0;
+    padding: 15px;
+    background: var(--card-background);
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.chart-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+/* ========== Timer Component ========== */
+.timer {
+    font-size: 1.2em;
+    margin-top: 10px;
+    text-align: center;
+    font-weight: bold;
+}
+
+/* ========== Workout Status ========== */
+.workout-status {
+    margin: 10px 0;
+    padding: 10px;
+    border-radius: 5px;
+}
+
+.workout-status.completed {
+    background-color: var(--success-color);
+    color: white;
+}
+
+.workout-status.in-progress {
+    background-color: #fff3cd;
+    color: #856404;
+}

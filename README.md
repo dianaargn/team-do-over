@@ -19,6 +19,7 @@ pip install flask_sqlalchemy
 pip install flask_login
 pip install werkzeug
 pip install waitress
+pip install pytz
 
 --Open instructions--
 python app2.py
