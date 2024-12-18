@@ -17,15 +17,14 @@
                 <div class="folder-header">
                     <h3>{{ folder.name }}</h3>
                     <div class="folder-actions">
-                        <button onclick="showForm('template-form')" type="submit" class='button'  >Add Workout</button>
-                        <form id='template-form' style="display: none;" action="{{ url_for('create_template', folder_id=folder.id) }}" method="post">
+                        <button onclick="showForm('{{folder.id}}')" type="submit" class='button'  >Add Workout</button>
+                        <form id={{folder.id}} style="display: none;" action="{{ url_for('create_template', folder_id=folder.id) }}" method="post">
                         <input type="text" name="name" placeholder="New workout name" required>
                         </form>
                         <form action="{{ url_for('delete_folder', folder_id=folder.id) }}" method="post">
                             <button type="submit" class="button delete-button" onclick="return confirm('Are you sure you want to delete this folder and all its templates?')">Delete</button>
                         </form>
                     </div>
-                    
                 </div>
                 <hr>
                 <div class="templates-list">

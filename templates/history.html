@@ -74,19 +74,13 @@
             </div>
         {% endfor %}
     {% else %}
-        <p>No past workouts found.</p>
+        <p class="history-body">No past workouts found.</p>
     {% endif %}
 
     <a href="{{ url_for('profile') }}" class="button">Back to Profile</a>
 </div>
 
 <style>
-.container {
-    max-width: 800px;
-    margin: 0 auto;
-    padding: 20px;
-}
-
 .logout {
     text-align: right;
     margin-bottom: 20px;

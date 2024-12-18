@@ -5,9 +5,9 @@
         <a href="{{ url_for('logout') }}" class="button">Logout</a>
     </div>
     <h1>Profile</h1>
-    <p>Hello, {{ current_user.username }}!</p>
-    <p>You have completed {{ total_workouts }} workouts so far.</p>
-    <p>Workouts this week: {{ workouts_per_week }}</p>
-    <p><a href="{{ url_for('dashboard') }}" class="button">Go to Dashboard</a></p>
+    <p class="profile-body">Hello, {{ current_user.username }}!</p>
+    <p class="profile-body">You have completed {{ total_workouts }} workouts so far.</p>
+    <p class="profile-body">Workouts this week: {{ workouts_per_week }}</p>
+    <p class="profile-body"><a href="{{ url_for('dashboard') }}" class="button">Go to Dashboard</a></p>
 </div>
 {% endblock %}
