@@ -18,6 +18,7 @@ from flask_login import (
 )
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
+from pytz import timezone
 from waitress import serve
 
 import os
@@ -29,6 +30,7 @@ app.config['SECRET_KEY'] = 'your-secret-key-here'  # Replace with a secure secre
 db = SQLAlchemy(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
+cstnow = lambda: datetime.now(timezone('America/Chicago'))
 
 # ----------------------- Models -----------------------
 
@@ -79,10 +81,11 @@ class Workout(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     template_id = db.Column(db.Integer, db.ForeignKey('workout_template.id'))
-    date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    date = db.Column(db.DateTime, nullable=False, default=cstnow())
     name = db.Column(db.String(100))
     notes = db.Column(db.String(500))
     completed = db.Column(db.Boolean, default=False)
+    end_time = db.Column(db.DateTime)  # Add this line
     sets = db.relationship('WorkoutSet', backref='workout', lazy=True)
 
 # Workout Set Model
@@ -190,7 +193,7 @@ def start_workout(template_id):
         new_workout = Workout(
             user_id=current_user.id,
             template_id=template_id,
-            date=datetime.utcnow(),
+            date=cstnow(),  # Changed from datetime.utcnow()
             name=template.name,
             notes=None
         )
@@ -548,6 +551,7 @@ def finish_workout(workout_id):
                 return redirect(url_for('view_workout', workout_id=workout_id))
 
         workout.completed = True
+        workout.end_time = cstnow()  # Add this line to record end time
         db.session.commit()
         flash("Workout completed successfully!", "success")
         return redirect(url_for('dashboard'))
@@ -679,7 +683,7 @@ def profile():
     total_workouts = Workout.query.filter_by(user_id=current_user.id, completed=True).count()
     
     # Workouts in the last 7 days
-    one_week_ago = datetime.utcnow() - timedelta(days=7)
+    one_week_ago = cstnow() - timedelta(days=7)
     workouts_last_week = Workout.query.filter(
         Workout.user_id == current_user.id,
         Workout.completed == True,

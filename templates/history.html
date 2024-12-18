@@ -8,20 +8,27 @@
     <h1>Workout History</h1>
 
     {% if workouts %}
-        {% for w in workouts %}
-            <div class="workout-entry">
-                <div style="display: flex; justify-content: space-between; align-items: start;">
-                    <div>
-                        <h2>{{ w.name or (w.template.name if w.template else 'Workout') }}</h2>
-                        <small>{{ w.date.strftime('%B %d, %Y at %I:%M %p') }}</small><br>
-                        {% if w.completed %}
-                            <small class="status completed">Completed</small>
-                        {% else %}
-                            <small class="status in-progress">In Progress</small>
-                        {% endif %}
-                    </div>
-                    <a href="{{ url_for('edit_history', workout_id=w.id) }}" class="button" style="margin-left: 10px;">Edit</a>
+    # In the history.html template, modify the workout entry section:
+    {% for w in workouts %}
+        <div class="workout-entry">
+            <div style="display: flex; justify-content: space-between; align-items: start;">
+                <div>
+                    <h2>{{ w.name or (w.template.name if w.template else 'Workout') }}</h2>
+                    <small>{{ w.date.strftime('%B %d, %Y at %I:%M %p') }}</small><br>
+                    {% if w.completed and w.end_time %}
+                        {% set duration = w.end_time - w.date %}
+                        {% set hours = duration.seconds // 3600 %}
+                        {% set minutes = (duration.seconds % 3600) // 60 %}
+                        <small>Duration: {{ hours }}h {{ minutes }}m</small><br>
+                    {% endif %}
+                    {% if w.completed %}
+                        <small class="status completed">Completed</small>
+                    {% else %}
+                        <small class="status in-progress">In Progress</small>
+                    {% endif %}
                 </div>
+                <a href="{{ url_for('edit_history', workout_id=w.id) }}" class="button" style="margin-left: 10px;">Edit</a>
+            </div>
 
                 {% if w.sets %}
                     <h3>Sets Performed:</h3>

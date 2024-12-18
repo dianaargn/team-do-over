@@ -19,7 +19,6 @@
     {% else %}
     <div class="status-message in-progress">
         This workout is in progress.
-        <div id="timer"></div>
     </div>
     {% endif %}
 
@@ -175,30 +174,6 @@
             });
             return formData;
         }
-
-        // Timer functionality
-        const startTime = new Date("{{ workout.date.isoformat() }}").getTime();
-        let timerElement = document.getElementById('timer');
-        if (!timerElement) {
-            timerElement = document.createElement('div');
-            timerElement.id = 'timer';
-            timerElement.style.fontSize = '1.2em';
-            timerElement.style.marginTop = '10px';
-            document.querySelector('.status-message.in-progress').appendChild(timerElement);
-        }
-
-        function updateTimer() {
-            const now = new Date().getTime();
-            const elapsed = now - startTime;
-            const totalSeconds = Math.floor(elapsed / 1000);
-            const hours = String(Math.floor(totalSeconds / 3600)).padStart(2, '0');
-            const minutes = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, '0');
-            const seconds = String(totalSeconds % 60).padStart(2, '0');
-            timerElement.textContent = `Elapsed Time: ${hours}:${minutes}:${seconds}`;
-        }
-
-        updateTimer();
-        setInterval(updateTimer, 1000);
 
         // Auto-save functionality with debounce
         let saveTimeout;
