@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Edit Template - Workout Logger</title>
+    <title>Edit Workout - Workout Logger</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <!-- we need to go up another level because of flask -->
     <link href="../../../static/style.css" rel="stylesheet">
@@ -50,9 +50,9 @@
             <label for="notes">Notes (optional)</label>
             <input type="text" id="notes" name="notes">
 
-            <button type="submit">Add Exercise</button>
+            <button class="add-exercise-button" type="submit">Add Exercise</button>
         </form>
-
+        <hr>
         <h2>Exercises in Workout</h2>
         <ul class="exercise-list">
             {% for ex in template.exercises %}

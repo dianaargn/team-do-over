@@ -125,6 +125,10 @@ button:active, a.button:active {
     transform: scale(0.98);
 }
 
+.add-exercise-button {
+    margin-bottom: 10px;
+
+}
 .finish-button, .save-button, .start-button {
     background-color: var(--success-color);
 }
