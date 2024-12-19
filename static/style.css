@@ -181,6 +181,10 @@ a:hover {
     text-decoration: underline;
 }
 
+.login-link {
+    justify-self: end;
+}
+
 /* ========== Forms ========== */
 input, select, textarea {
     width: 100%;
@@ -465,7 +469,7 @@ li:last-child {
         }
 
 /* ========== Authentication Forms ========== */
-.auth-container {
+.auth-container, .login-container {
     max-width: 600px;
     margin: 40px auto;
     background: var(--card-background);
