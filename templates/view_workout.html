@@ -52,6 +52,7 @@
         <input type="hidden" name="action" id="formAction">
 
         {% for exercise_name, sets in workout.sets|groupby('exercise.name') %}
+        <p>debug text</p>
         <div class="exercise-container">
             <div class="exercise-header">
                 <h3>{{ exercise_name }}</h3>
@@ -121,7 +122,7 @@
                                        name="sets[{{ s.id }}][rir]" 
                                        id="rir_{{ s.id }}"
                                        min="0" 
-                                       max="9" 
+                                        max="9" 
                                        value="{{ s.rir or '' }}" 
                                        {% if workout.completed %}readonly{% endif %}
                                        onchange="handleInputChange(this)">
