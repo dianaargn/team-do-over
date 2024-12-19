@@ -51,8 +51,11 @@
     <form action="{{ url_for('finish_workout', workout_id=workout.id) }}" method="post" id="workoutForm">
         <input type="hidden" name="action" id="formAction" value="finish">
 
-        {% for exercise_name, sets in workout.sets|groupby('exercise.name') %}
+        {% for exercise, sets in workout.sets|groupby('exercise') %}
         <div class="exercise-container">
+            <div class="exercise-header">
+                <h3>{{ exercise.name }}</h3>
+            <div class="exercise-container">
             <div class="exercise-header">
                 <h3>{{ exercise_name }}</h3>
                 {% if not workout.completed %}
