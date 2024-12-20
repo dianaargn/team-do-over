@@ -74,7 +74,7 @@
                     {% if ex.rir %}RIR: {{ ex.rir }}<br>{% endif %}
                     {% if ex.notes %}Notes: {{ ex.notes }}{% endif %}
                 </div>
-                <div class="edit-form" id="edit-form-{{ ex.id }}">
+                <div class="edit-form" id="edit-form-{{ ex.id }}" style="display:none;">
                     <form method="POST" action="{{ url_for('update_template_exercise', template_id=template.id, exercise_id=ex.id) }}">
                         <label for="sets-{{ ex.id }}">Sets (required)</label>
                         <input type="number" id="sets-{{ ex.id }}" name="sets" min="1" value="{{ ex.sets }}" required>
