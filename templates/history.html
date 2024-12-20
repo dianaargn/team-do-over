@@ -8,7 +8,6 @@
     <h1>Workout History</h1>
 
     {% if workouts %}
-    # In the history.html template, modify the workout entry section:
     {% for w in workouts %}
         <div class="workout-entry">
             <div style="display: flex; justify-content: space-between; align-items: start;">
@@ -76,8 +75,6 @@
     {% else %}
         <p class="history-body">No past workouts found.</p>
     {% endif %}
-
-    <a href="{{ url_for('profile') }}" class="button">Back to Profile</a>
 </div>
 
 <style>
